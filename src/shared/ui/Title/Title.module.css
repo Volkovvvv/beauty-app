@@ -1,0 +1,13 @@
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.xl { font-size: 38px; }
+.lg { font-size: 34px; }
+.md { font-size: 26px; line-height: 1.1; }
+
+.title i { font-style: italic; }

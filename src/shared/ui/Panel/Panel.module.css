@@ -1,0 +1,20 @@
+.panel {
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
+.box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 16px;
+}
+
+/* Двойной класс — чтобы перебить border: none у строк-кнопок */
+.panel.list > * + * { border-top: 1px solid var(--line); }

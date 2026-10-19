@@ -1,0 +1,64 @@
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.time {
+  flex: none;
+  width: 44px;
+  padding-top: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.card {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tappable { cursor: pointer; transition: transform 0.12s ease; }
+.tappable:active { transform: scale(0.985); }
+
+.window {
+  background: rgba(255, 255, 255, 0.35);
+  border: 1.5px dashed var(--dashed);
+}
+
+.dim { opacity: 0.55; }
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.window .title { color: var(--cherry); }
+
+.subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.aside {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}

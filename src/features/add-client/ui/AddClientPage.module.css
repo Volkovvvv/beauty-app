@@ -1,0 +1,11 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--danger);
+}

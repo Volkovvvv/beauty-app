@@ -1,0 +1,289 @@
+// Схема БД «Мастер CRM» — запись клиенток к бьюти-мастеру.
+//
+// Те же сквозные правила, что в tutor-crm:
+//
+// 1. Деньги — целые копейки (Int). Ни одного Float.
+// 2. Всё, что принадлежит мастеру, скоупится по masterId. Ни один запрос
+//    к API не должен доставать строку, не проверив владельца.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7: строка подключения живёт в prisma.config.ts,
+// а рантайм получает её через адаптер драйвера (src/prisma/prisma.service.ts).
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Люди ────────────────────────────────────────────────────────────────
+
+// Аккаунт Telegram. Один человек может быть и мастером, и чьей-то клиенткой,
+// поэтому роль живёт не здесь, а в связях: Master и Client.
+model User {
+  id         String    @id @default(uuid())
+  // BigInt обязателен: Telegram ID давно вышел за пределы int32.
+  tgId       BigInt    @unique
+  username   String?
+  firstName  String
+  lastName   String?
+  photoUrl   String?
+  // Таймзона решает, во сколько по-настоящему наступает «12:00»
+  // и когда планировщику слать напоминание.
+  timezone   String    @default("Europe/Moscow")
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  master      Master?
+  clientCards Client[] @relation("ClientUser")
+
+  @@map("users")
+}
+
+// Кабинет мастера — корень владения данными.
+model Master {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Как мастера зовут клиентки; null — берём имя из Telegram.
+  displayName String?
+
+  // Чем занимается: id из src/specialties/specialties.ts («nails», «brows»…).
+  // Строки, а не enum: новая специализация — правка каталога, без миграции.
+  // От них зависят стартовый прайс, подписи карточки и тексты бота.
+  specialties String[] @default([])
+  // Мастер выбрал специализации при первом входе; null — показать выбор.
+  onboardedAt DateTime?
+
+  // Рабочий день в минутах от полуночи: по нему приложение режет слоты
+  // и считает свободные окна. 600 = 10:00, 1260 = 21:00.
+  dayStart Int @default(600)
+  dayEnd   Int @default(1260)
+
+  // Напоминания клиенткам: «за день и за 2 часа». 0 — выключено.
+  notifyBeforeHours   Int @default(24)
+  notifyBeforeMinutes Int @default(120)
+
+  // Кабинет закрыт администратором: вход, запросы и напоминания отключены,
+  // данные остаются. null — доступ есть.
+  bannedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services     Service[]
+  clients      Client[]
+  appointments Appointment[]
+  photos       ClientPhoto[]
+
+  @@map("masters")
+}
+
+// ─── Прайс ───────────────────────────────────────────────────────────────
+
+// Услуга из прайса мастера. Новому кабинету заводится стартовый прайс
+// маникюра (src/services/default-services.ts), дальше мастер правит свой.
+model Service {
+  id       String @id @default(uuid())
+  masterId String
+  master   Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  name    String
+  minutes Int
+  // Цена и расход материалов на одну услугу — копейки.
+  price   Int
+  cost    Int    @default(0)
+  // Порядок в прайсе: так мастер видит услуги в форме записи.
+  sort    Int    @default(0)
+
+  // Убранная из прайса услуга: в новых записях её нет, но старые записи
+  // хранят свой снимок и от неё не зависят (см. Appointment.services).
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([masterId, archivedAt])
+  @@map("services")
+}
+
+// ─── Клиентки ────────────────────────────────────────────────────────────
+
+// Карточка клиентки в кабинете мастера.
+//
+// userId = null — нормальное состояние: мастер завёл клиентку вручную.
+// Писать ей в Telegram бот может только после того, как она сама нажала
+// /start по ссылке-приглашению и userId проставился.
+model Client {
+  id       String @id @default(uuid())
+  masterId String
+  master   Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation("ClientUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  name         String
+  // Раз в сколько недель ходит на коррекцию: от этого «пора записать»
+  // и напоминание «позвать на коррекцию».
+  repeatWeeks  Int          @default(3)
+  // Карточка мастера: форма и длина, что любит, аллергия, как платит.
+  shape        String?
+  likes        String?
+  allergy      String?
+  payment      String?
+  note         String?
+  inviteStatus InviteStatus @default(NONE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+  photos       ClientPhoto[]
+  invites      Invite[]
+
+  @@index([masterId])
+  // Один и тот же человек не может быть заведён у мастера дважды.
+  @@unique([masterId, userId])
+  @@map("clients")
+}
+
+// Фото работы мастера на клиентке.
+//
+// Картинка хранится в базе, а не в объектном хранилище: фото сжаты клиентом
+// до ~300 КБ, их немного, и отдельный сервис хранения на пилоте не окупается.
+// Перенести в S3 можно позже, не меняя API.
+model ClientPhoto {
+  id       String @id @default(uuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // Денормализация: проверка владельца без join'а.
+  masterId String
+  master   Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  label     String
+  mime      String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@index([clientId, createdAt])
+  @@map("client_photos")
+}
+
+// ─── Записи ──────────────────────────────────────────────────────────────
+
+model Appointment {
+  id String @id @default(uuid())
+
+  // Денормализация: почти каждая выборка — «все записи мастера за период».
+  masterId String
+  master   Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Абсолютный момент начала (timestamptz): планировщику нужен именно он.
+  startsAt DateTime
+  // Длительность в минутах — сумма услуг на момент записи.
+  duration Int
+
+  // СНИМОК услуг и цены на момент записи, копейки. Поднял мастер цену
+  // наращивания — прошлые месяцы в «Деньгах» не должны переписаться.
+  // Форма — ServiceSnapshot[] в src/appointments/services-snapshot.ts.
+  // JSON, а не таблица связей: снимок только читается целиком.
+  services Json
+  price    Int
+  note     String?
+
+  status AppointmentStatus @default(PLANNED)
+  // Сколько клиентка заплатила, копейки. price − paid у проведённой записи — долг.
+  paid   Int               @default(0)
+  paidAt DateTime?
+
+  // Что сказала клиентка на напоминание бота.
+  confirmedAt DateTime?
+  declinedAt  DateTime?
+
+  // Переключатели из формы записи: напоминать о визите
+  // и через repeatWeeks позвать на коррекцию.
+  remind Boolean @default(true)
+  rebook Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reminders Reminder[]
+
+  // Расписание кабинета за период.
+  @@index([masterId, startsAt])
+  // Рабочий индекс планировщика: «какие записи скоро начнутся».
+  @@index([startsAt, status])
+  // История клиентки.
+  @@index([clientId, startsAt])
+  @@map("appointments")
+}
+
+// ─── Напоминания ─────────────────────────────────────────────────────────
+
+// Журнал напоминаний. Существует ради @@unique ниже: планировщик
+// перезапускается и тикает дважды, а клиентка должна получить
+// «завтра в 12:00 запись» ровно один раз.
+model Reminder {
+  id            String      @id @default(uuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  kind        ReminderKind
+  scheduledAt DateTime
+  // Когда фактически ушло; null — ещё в очереди.
+  sentAt      DateTime?
+  error       String?
+  attempts    Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  @@unique([appointmentId, kind])
+  @@index([sentAt, scheduledAt])
+  @@map("reminders")
+}
+
+// ─── Приглашения ─────────────────────────────────────────────────────────
+
+// Код для deep link t.me/<bot>?start=<code>. Одноразовый и с TTL:
+// утёкшая ссылка иначе навсегда даёт постороннему привязаться к чужой карточке.
+model Invite {
+  id       String @id @default(uuid())
+  code     String @unique
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([clientId])
+  @@map("invites")
+}
+
+// ─── Перечисления ────────────────────────────────────────────────────────
+
+enum InviteStatus {
+  NONE
+  INVITED
+  ACCEPTED
+}
+
+// ARRIVED — клиентка в кресле: мастер нажал «Клиентка пришла».
+enum AppointmentStatus {
+  PLANNED
+  ARRIVED
+  DONE
+  CANCELLED
+}
+
+enum ReminderKind {
+  BEFORE_HOURS
+  BEFORE_MINUTES
+  // «Пора на коррекцию»: через repeatWeeks после визита, если клиентка
+  // так и не записалась снова.
+  REBOOK
+}

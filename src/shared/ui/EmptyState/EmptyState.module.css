@@ -1,0 +1,14 @@
+.empty {
+  padding: 22px 16px;
+  border-radius: var(--radius);
+  border: 1.5px dashed var(--dashed);
+  background: rgba(255, 255, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}

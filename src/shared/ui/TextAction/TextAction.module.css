@@ -1,0 +1,9 @@
+.action {
+  flex: none;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cherry);
+}

@@ -1,0 +1,73 @@
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+/* Внутри .hero — чтобы перебить размер из Title независимо от порядка стилей */
+.hero .name { font-size: 36px; }
+
+.history {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.next {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nextLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cherry);
+}
+
+.nextWhen { font-size: 16px; font-weight: 800; }
+
+.nextHint {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.field {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.fieldKey {
+  flex: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fieldValue,
+.fieldAlert {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fieldAlert { color: var(--danger); }

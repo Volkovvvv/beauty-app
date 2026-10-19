@@ -1,0 +1,19 @@
+.bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(22px + var(--safe-bottom));
+  z-index: 20;
+  transform: translateX(-50%);
+  width: min(532px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dark {
+  gap: 12px;
+  padding: 8px 8px 8px 20px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  box-shadow: var(--shadow-dark);
+}

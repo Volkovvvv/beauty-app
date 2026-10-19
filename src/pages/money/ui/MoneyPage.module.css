@@ -1,0 +1,148 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.caption {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.amount {
+  font-family: var(--font-display);
+  font-size: 60px;
+  line-height: 0.95;
+}
+
+.delta {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.down { color: var(--danger); }
+
+.chart {
+  padding: 16px 14px 12px;
+  border-radius: 24px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bars {
+  height: 130px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.barCol {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.barValue {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.bar {
+  width: 100%;
+  border-radius: 8px;
+  background: var(--bar);
+  transition: height 0.3s ease;
+}
+
+.barActive { background: var(--cherry); }
+
+.labels {
+  display: flex;
+  gap: 6px;
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.labelActive { color: var(--cherry); }
+
+.stats {
+  display: flex;
+  gap: 8px;
+}
+
+.service {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.serviceHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.serviceHead span:last-child { font-size: 14px; white-space: nowrap; }
+
+.track {
+  height: 6px;
+  border-radius: 6px;
+  background: var(--soft);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--cherry);
+}
+
+.debt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.debtLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cherry);
+}
+
+.debtWho { font-size: 15px; font-weight: 800; }
+
+.debtNote {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}

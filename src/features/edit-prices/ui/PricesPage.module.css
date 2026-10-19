@@ -1,0 +1,53 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Заголовок занимает середину, «+» прижат вправо */
+.header > h1 { flex: 1; }
+
+.lead {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name { font-size: 15px; font-weight: 700; }
+
+.meta {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.price {
+  flex: none;
+  font-size: 14.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}

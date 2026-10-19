@@ -1,0 +1,35 @@
+.hello {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.lead {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* Чипы в сетке растягиваются на всю ячейку */
+.grid > * { min-height: 64px; }
+
+.error {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--danger);
+}

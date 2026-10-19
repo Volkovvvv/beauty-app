@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────
+   Дизайн-токены: стиль «Cherry glaze» — молочный фон, вишнёвый
+   акцент, жемчужные аватары. Компоненты берут значения только отсюда.
+
+   Цвета не берутся из themeParams Telegram: приложение выглядит
+   одинаково у всех, в том числе в тёмной теме Telegram.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f6eeea;            /* молочный фон, он же шапка Telegram */
+  --bg-blush: #f7d9dc;      /* розовое пятно сверху */
+  --bg-sand: #efe2d6;       /* песочное пятно снизу */
+
+  /* Вишня — главный акцент: следующая запись, выбранное, CTA */
+  --cherry: #7a1630;
+  --cherry-soft: #b8576c;   /* записи в невыбранных днях недели */
+  --on-cherry: #fbeff1;
+  --on-cherry-muted: #f1c9d1;
+
+  /* Текст */
+  --ink: #2a1a1f;
+  --muted: #6e5258;
+  --faint: #9a8086;
+  --on-ink: #f6eeea;        /* текст на тёмных кнопках */
+  --on-ink-muted: #cdb3b8;
+
+  /* Поверхности */
+  --card: #ffffff;
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-strong: rgba(255, 255, 255, 0.85);
+  --soft: #f1e4e1;          /* второстепенная кнопка, дорожка прогресса */
+  --line: #f1e4e1;          /* разделители внутри белых карточек */
+  --line-strong: #eadad6;   /* контур невыбранных чипов */
+  --dashed: #d2b3b9;        /* контур свободного окна */
+  --rose: #f1d6da;          /* подложка инициалов */
+  --bar: #ecd6da;           /* столбики графика */
+  --past: #d9c4c8;          /* прошедшие записи в сетке */
+  --track-off: #e3d3cf;
+
+  --danger: #b3261e;
+  --success: #2f7a4a;
+
+  /* Жемчужный градиент аватара */
+  --pearl: linear-gradient(140deg, #fff 0%, #e8c9cd 45%, #f7eef0 70%, #d9b3b9 100%);
+
+  /* Тени — всегда вишнёвого оттенка, никогда не серые */
+  --shadow-hero: 0 18px 34px rgba(122, 22, 48, 0.32);
+  --shadow-cta: 0 14px 28px rgba(122, 22, 48, 0.32);
+  --shadow-float: 0 14px 30px rgba(90, 30, 45, 0.2);
+  --shadow-dark: 0 16px 30px rgba(42, 26, 31, 0.35);
+
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
+
+  /* Место под нижнее меню или плавающую панель действий */
+  --bottom-space: 120px;
+
+  --radius-sm: 14px;
+  --radius: 20px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* Instrument Serif — заголовки и крупные цифры, Manrope — всё остальное */
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}

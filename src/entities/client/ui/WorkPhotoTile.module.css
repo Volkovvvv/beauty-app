@@ -1,0 +1,21 @@
+.photo {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  /* Пока фото грузится — полосатая подложка в тон дизайну */
+  background: repeating-linear-gradient(135deg, #f3e6e1 0 10px, #ece0db 10px 20px);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: 7px;
+}
+
+.label {
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 10.5px;
+  font-weight: 700;
+}
