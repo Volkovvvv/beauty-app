@@ -18,6 +18,9 @@ interface TelegramWebApp {
   setBackgroundColor?(color: string): void
   setHeaderColor?(color: string): void
   openTelegramLink?(url: string): void
+  /** Bot API 7.8+: публикация сторис по публичной https-ссылке на картинку */
+  shareToStory?(mediaUrl: string, params?: { text?: string }): void
+  isVersionAtLeast?(version: string): boolean
   HapticFeedback?: { impactOccurred(style: 'light' | 'medium' | 'heavy'): void }
   BackButton?: TelegramBackButton
 }
@@ -114,4 +117,18 @@ export function openChat(username?: string | null): boolean {
   if (tg?.openTelegramLink) tg.openTelegramLink(url)
   else window.open(url, '_blank', 'noopener')
   return true
+}
+
+/** Умеет ли этот клиент Telegram публиковать сторис из мини-аппа */
+export function canShareToStory(): boolean {
+  try {
+    return Boolean(tg?.shareToStory && tg.isVersionAtLeast?.('7.8'))
+  } catch {
+    return false
+  }
+}
+
+/** Открыть редактор сторис Telegram с картинкой по ссылке */
+export function shareToStory(mediaUrl: string): void {
+  tg?.shareToStory?.(mediaUrl)
 }

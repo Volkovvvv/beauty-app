@@ -48,6 +48,7 @@ export interface ApiAppointment {
 export interface ApiMaster {
   displayName: string | null
   telegramName: string
+  username: string | null
   dayStart: number
   dayEnd: number
   specialties: string[]
@@ -123,6 +124,7 @@ export const appointmentToApi = (d: AppointmentDraft) => ({
   clientId: d.clientId,
   startsAt: startsAtToApi(d.date, d.start),
   serviceIds: d.services.map((s) => s.id),
+  duration: d.minutes,
   ...(d.note ? { note: d.note } : {}),
   remind: d.remind,
   rebook: d.rebook,
@@ -135,6 +137,7 @@ export const paidToApi = kop
 export const masterFromApi = (m: ApiMaster): Master => ({
   name: m.displayName ?? m.telegramName.split(' ')[0],
   telegramName: m.telegramName,
+  username: m.username,
   workday: { start: m.dayStart, end: m.dayEnd },
   specialties: m.specialties,
   onboarded: m.onboardedAt !== null,

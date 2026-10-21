@@ -8,6 +8,8 @@ export interface BookingInitial {
   date?: ISODate
   /** Минуты от полуночи — время окна, с которого открыли запись */
   start?: number
+  /** Своя длительность записи, если мастер её поправил */
+  minutes?: number
   replaceId?: string
   note?: string
 }

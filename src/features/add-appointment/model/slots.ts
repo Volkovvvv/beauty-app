@@ -49,3 +49,21 @@ export function daySlots({ appointments, date, minutes, now, workday, ignoreId, 
         isBusy(day, start, length, ignoreId),
     }))
 }
+
+const DAY_END = 24 * 60
+
+/**
+ * Почему нельзя начать запись во время, которое мастер ввёл сам; null — можно.
+ * Рабочий день тут не ограничивает: мастер сам решил задержаться или прийти раньше.
+ */
+export function customStartProblem(
+  { appointments, date, minutes, now, ignoreId }: Omit<SlotsInput, 'workday' | 'extra'>,
+  start: number
+): string | null {
+  if (date < now.date || (date === now.date && start <= now.minutes)) return 'Это время уже прошло'
+  if (start + minutes > DAY_END) return 'Запись не помещается до полуночи'
+  if (isBusy(dayAppointments(appointments, date), start, Math.max(minutes, 1), ignoreId)) {
+    return 'Пересекается с другой записью'
+  }
+  return null
+}

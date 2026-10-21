@@ -1,0 +1,337 @@
+/* Сторис 360×640 — значения перенесены из StoryCard.dc.html как есть.
+   Цвета свои у каждого шаблона: картинка уходит наружу и не зависит от темы приложения. */
+
+.card {
+  position: relative;
+  width: 360px;
+  height: 640px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 60px;
+  line-height: 0.92;
+}
+
+.compact .title { font-size: 48px; }
+
+.name {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.range { font-size: 14px; }
+
+.handle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cta {
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Список окон: занимает всё свободное место, при нехватке уменьшается целиком */
+.fit {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fitInner {
+  flex: none;
+  transform-origin: center center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.compact .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.day {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.compact .day {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.dayLabel {
+  flex: none;
+  width: 58px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.compact .dayLabel { width: auto; }
+
+.times {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.time { font-weight: 800; }
+
+/* ─── Вишня ─── */
+
+.cherry {
+  padding: 44px 28px 32px;
+  background: radial-gradient(80% 50% at 90% 0%, #a3324f 0%, rgba(163, 50, 79, 0) 70%), #7a1630;
+  color: #fbeff1;
+}
+
+.cherry .name,
+.cherry .range,
+.cherry .handle { color: #f1c9d1; }
+
+.cherry .range { font-weight: 600; }
+
+.cherry .grid { gap: 10px; }
+.cherry.compact .grid { gap: 10px 12px; }
+
+.cherry .day { align-items: center; }
+.cherry.compact .day { align-items: flex-start; }
+
+.cherry .times { gap: 5px; }
+
+.cherry .time {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #fbeff1;
+  color: #7a1630;
+  font-size: 14.5px;
+}
+
+.cherry.compact .time {
+  padding: 3px 8px;
+  font-size: 12.5px;
+}
+
+.cherry .cta { background: #fbeff1; color: #2a1a1f; }
+
+/* ─── Крем ─── */
+
+.cream {
+  padding: 40px 28px 30px;
+  background: #f6eeea;
+  color: #2a1a1f;
+  gap: 18px;
+}
+
+.cream .title { line-height: 0.95; }
+
+.accent { color: #7a1630; }
+
+.creamTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid #2a1a1f;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cream .grid { column-gap: 16px; }
+
+.cream .day {
+  padding: 9px 0;
+  border-top: 1px solid #2a1a1f;
+}
+
+.cream.compact .day { padding: 6px 0; }
+
+.cream .dayLabel {
+  width: 76px;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.cream.compact .dayLabel {
+  width: auto;
+  font-size: 19px;
+}
+
+.cream .times { gap: 4px 14px; }
+
+.cream .time {
+  font-size: 17px;
+  color: #7a1630;
+}
+
+.cream.compact .time { font-size: 14px; }
+
+.creamFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1.5px solid #2a1a1f;
+}
+
+.creamCta {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.cream .handle {
+  font-size: 13px;
+  color: #6e5258;
+}
+
+/* ─── Фото ─── */
+
+.photo {
+  padding: 0;
+  background: #3a2228;
+  color: #fff;
+}
+
+.photoBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.photoShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(25, 12, 16, 0.2) 0%, rgba(25, 12, 16, 0.5) 100%);
+}
+
+.photoContent {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 44px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.photo .title { text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25); }
+
+.photo .range { font-weight: 700; }
+
+/* Стекло без backdrop-filter: в картинку он не переносится, а фон и так размыт */
+.glass {
+  padding: 4px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-sizing: border-box;
+}
+
+.photo .grid { column-gap: 14px; }
+
+.photo .day { padding: 9px 0; }
+.photo.compact .day { padding: 6px 0; }
+
+.photo .dayBorder { border-top: 1px solid rgba(255, 255, 255, 0.28); }
+
+.photo .times { gap: 2px 12px; }
+
+.photo .time { font-size: 17px; }
+.photo.compact .time { font-size: 14px; }
+
+.photo .cta { background: #fff; color: #2a1a1f; }
+
+/* ─── Ночь ─── */
+
+.night {
+  padding: 42px 24px 28px;
+  background: radial-gradient(90% 45% at 0% 0%, #4a2a33 0%, rgba(74, 42, 51, 0) 70%), #2a1a1f;
+  color: #f6eeea;
+}
+
+.night .accent { color: #f1c9d1; }
+
+.nightName {
+  align-self: flex-start;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(241, 201, 209, 0.5);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #f1c9d1;
+}
+
+.night .grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.night.compact .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.night .day,
+.night.compact .day {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.night .dayLabel {
+  width: auto;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f1c9d1;
+}
+
+.night .times { gap: 2px 10px; }
+
+.night .time { font-size: 18px; }
+.night.compact .time { font-size: 14px; }
+
+.nightFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: #f1c9d1;
+  color: #2a1a1f;
+}
+
+.ctaText {
+  font-size: 15px;
+  font-weight: 800;
+}

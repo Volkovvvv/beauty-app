@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { Appointment } from '../../../entities/appointment'
 import type { Client } from '../../../entities/client'
+import { weekdayDayMonth, type ISODate } from '../../../shared/lib/date'
 import { compact, rub } from '../../../shared/lib/format'
 import { cx } from '../../../shared/lib/cx'
 import type { Now } from '../../../shared/lib/useNow'
-import { Button, Panel, Screen, Segmented, Stack, StatTile, Title } from '../../../shared/ui'
-import { debts, moneySummary, type Debt, type Period } from '../model/summary'
+import { Button, IconButton, Panel, Screen, Segmented, Stack, StatTile, TextAction, Title } from '../../../shared/ui'
+import { debts, moneySummary, shiftPeriod, type Debt, type Period } from '../model/summary'
 import s from './MoneyPage.module.css'
 
 const PERIODS: readonly { value: Period; label: string }[] = [
@@ -18,11 +19,15 @@ interface MoneyPageProps {
   clientById: Map<string, Client>
   now: Now
   onRemind: (debt: Debt) => void
+  /** Открыть день во вкладке «Записи» */
+  onOpenDay: (date: ISODate) => void
 }
 
-export default function MoneyPage({ appointments, clientById, now, onRemind }: MoneyPageProps) {
+export default function MoneyPage({ appointments, clientById, now, onRemind, onOpenDay }: MoneyPageProps) {
   const [period, setPeriod] = useState<Period>('week')
-  const m = useMemo(() => moneySummary(appointments, period, now.date), [appointments, period, now.date])
+  // Любой день листаемого периода; по умолчанию — текущий период
+  const [anchor, setAnchor] = useState(now.date)
+  const m = useMemo(() => moneySummary(appointments, period, anchor, now.date), [appointments, period, anchor, now.date])
   const owed = useMemo(() => debts(appointments, clientById), [appointments, clientById])
   const max = Math.max(1, ...m.bars.map((b) => b.value))
   const top = m.services[0]?.value || 1
@@ -31,11 +36,24 @@ export default function MoneyPage({ appointments, clientById, now, onRemind }: M
     <Screen>
       <header className={s.header}>
         <Title>Деньги</Title>
-        <Segmented label="Период" options={PERIODS} value={period} onChange={setPeriod} />
+        <Segmented
+          label="Период"
+          options={PERIODS}
+          value={period}
+          onChange={(p) => {
+            setPeriod(p)
+            setAnchor(now.date)
+          }}
+        />
       </header>
 
       <div className={s.total}>
-        <span className={s.caption}>{m.caption}</span>
+        <div className={s.periodRow}>
+          <IconButton label="Раньше" variant="white" onClick={() => setAnchor(shiftPeriod(period, anchor, -1))}>‹</IconButton>
+          <span className={s.caption}>{m.caption}</span>
+          <IconButton label="Позже" variant="white" onClick={() => setAnchor(shiftPeriod(period, anchor, 1))}>›</IconButton>
+          {m.current ? null : <TextAction onClick={() => setAnchor(now.date)}>К текущей</TextAction>}
+        </div>
         <span className={s.amount}>{rub(m.total)}</span>
         {m.delta ? <span className={cx(s.delta, m.delta.value < 0 && s.down)}>{m.delta.label}</span> : null}
       </div>
@@ -63,6 +81,27 @@ export default function MoneyPage({ appointments, clientById, now, onRemind }: M
         <StatTile label="Средний чек" value={rub(m.avgCheck)} />
         <StatTile label="Материалы" value={`−${rub(m.materials)}`} />
       </div>
+
+      {m.days.length ? (
+        <Stack gap={10}>
+          <Title size="md" as="h2">По дням</Title>
+          <Panel list>
+            {m.days.map((d) => (
+              <button key={d.date} type="button" className={s.dayRow} onClick={() => onOpenDay(d.date)}>
+                <span className={s.dayText}>
+                  <span className={s.dayName}>{weekdayDayMonth(d.date)}</span>
+                  <span className={s.dayMeta}>{d.upcoming ? `${d.count} · впереди` : d.count}</span>
+                </span>
+                <span className={cx(s.daySum, d.upcoming && s.daySumUpcoming)}>{rub(d.total)}</span>
+              </button>
+            ))}
+          </Panel>
+        </Stack>
+      ) : (
+        <Panel>
+          <span className={s.empty}>В этот период записей не было</span>
+        </Panel>
+      )}
 
       {m.services.length ? (
         <Stack gap={10}>

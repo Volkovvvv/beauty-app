@@ -119,6 +119,97 @@
   color: var(--on-cherry);
 }
 
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 0;
+}
+
+.rowTitle {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rowHint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--faint);
+}
+
+.time {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  outline: none;
+}
+
+.time:focus { border-color: var(--cherry); }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--cherry);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stepValue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.minutes {
+  width: 56px;
+  min-height: 36px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.minutes::-webkit-inner-spin-button,
+.minutes::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.minutes:focus { border-color: var(--cherry); }
+
+.problem {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--danger);
+}
+
 .total {
   flex: 1;
   min-width: 0;

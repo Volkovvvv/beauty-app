@@ -16,6 +16,8 @@ export interface Specialty {
 export interface Master {
   name: string
   telegramName: string
+  /** Ник в Telegram без @, если есть */
+  username: string | null
   workday: Workday
   specialties: string[]
   onboarded: boolean

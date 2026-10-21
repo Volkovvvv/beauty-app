@@ -6,11 +6,34 @@
 Сверстано по дизайну «Cherry glaze» (`Nail Master.dc.html`, секция 1a).
 
 Репозиторий — два приложения: фронт (этот каталог) и API в [api/](api/README.md)
-(NestJS + PostgreSQL + бот). Сначала поднимите API по его README, затем:
+(NestJS + PostgreSQL + бот).
+
+## Запуск локально
+
+Нужен локальный Postgres и настроенный `api/.env` — один раз по [api/README.md](api/README.md).
+Дальше два терминала:
 
 ```bash
-npm install
-npm run dev        # http://localhost:5174 — вход без Telegram, тестовым мастером
+npm run dev:api    # API на http://localhost:3002/api
+npm run dev        # фронт на http://localhost:5174
+```
+
+Открыть http://localhost:5174 в обычном браузере — вход из Telegram не нужен.
+Dev-сервер подписывает initData тестового мастера токеном из `api/.env`
+(`tools/vite-dev-telegram-login.ts`), и API проверяет его как настоящий.
+Правки в коде подхватываются сразу.
+
+- Фронт в dev-режиме ходит в локальный API — адрес в `.env.development`.
+- Тестовый мастер по умолчанию — «Вика» с id `100000001`; `npm run seed:demo`
+  в `api/` наполняет его кабинет демо-клиентками и записями. Другого мастера
+  можно задать в `.env.development.local` (`DEV_TG_USER_ID`, `DEV_TG_FIRST_NAME`,
+  `DEV_TG_USERNAME`).
+- В `api/.env` стоит `BOT_MODE="off"`: бот не подключается к Telegram и никому не пишет.
+- Порты 5174 и 3002 — чтобы не пересекаться с saas (5173 и 3001), оба проекта
+  можно держать запущенными одновременно.
+- Dev-вход отвечает только запросам с этого компьютера и в сборку не попадает.
+
+```bash
 npm run typecheck  # tsc --noEmit, strict
 npm run build      # проверка типов + сборка в dist/
 ```

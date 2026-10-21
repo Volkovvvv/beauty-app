@@ -16,6 +16,7 @@ import {
 } from 'class-validator'
 import { PaginationDto } from '../../common/dto/pagination.dto'
 import { MAX_PRICE_KOPECKS } from '../../common/money'
+import { MAX_DURATION_MINUTES } from '../overlap'
 
 export class CreateAppointmentDto {
   @IsUUID()
@@ -34,6 +35,16 @@ export class CreateAppointmentDto {
   @ArrayMaxSize(10)
   @IsUUID('all', { each: true })
   serviceIds!: string[]
+
+  /**
+   * Своя длительность, минуты: мастер поставил «на 30 минут», а по прайсу выходит час.
+   * Не передана — сумма услуг. Цену не меняет.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(5, { message: 'Запись короче 5 минут' })
+  @Max(MAX_DURATION_MINUTES, { message: 'Запись дольше 10 часов — разбейте её на два визита' })
+  duration?: number
 
   /** Уточнение: «кошачий глаз», «миндаль». */
   @IsOptional()
@@ -65,6 +76,16 @@ export class UpdateAppointmentDto {
   @ArrayMaxSize(10)
   @IsUUID('all', { each: true })
   serviceIds?: string[]
+
+  /**
+   * Своя длительность, минуты: мастер поставил «на 30 минут», а по прайсу выходит час.
+   * Не передана, а услуги поменялись — сумма новых услуг. Цену не меняет.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(5, { message: 'Запись короче 5 минут' })
+  @Max(MAX_DURATION_MINUTES, { message: 'Запись дольше 10 часов — разбейте её на два визита' })
+  duration?: number
 
   @IsOptional()
   @IsEnum(AppointmentStatus, { message: 'status: PLANNED | ARRIVED | DONE | CANCELLED' })

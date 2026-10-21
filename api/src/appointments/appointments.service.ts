@@ -86,7 +86,7 @@ export class AppointmentsService {
     if (!client) throw new NotFoundException('Клиентка не найдена')
 
     const services = await this.snapshot(masterId, dto.serviceIds)
-    const slot: Slot = { startsAt: new Date(dto.startsAt), duration: snapshotMinutes(services) }
+    const slot: Slot = { startsAt: new Date(dto.startsAt), duration: dto.duration ?? snapshotMinutes(services) }
 
     const row = await this.prisma.$transaction(async (tx) => {
       await this.assertFree(tx, masterId, slot)
@@ -129,6 +129,7 @@ export class AppointmentsService {
       data.duration = snapshotMinutes(services)
       data.price = price
     }
+    if (dto.duration !== undefined) data.duration = dto.duration
     if (dto.startsAt !== undefined) {
       data.startsAt = new Date(dto.startsAt)
       // Перенесли — прежний ответ клиентки на напоминание больше не про этот визит
@@ -150,7 +151,7 @@ export class AppointmentsService {
       startsAt: dto.startsAt !== undefined ? new Date(dto.startsAt) : current.startsAt,
       duration: (data.duration as number | undefined) ?? current.duration,
     }
-    const timeChanged = dto.startsAt !== undefined || dto.serviceIds !== undefined
+    const timeChanged = dto.startsAt !== undefined || dto.serviceIds !== undefined || dto.duration !== undefined
     const status = dto.status ?? current.status
 
     const row = await this.prisma.$transaction(async (tx) => {

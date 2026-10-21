@@ -1,0 +1,275 @@
+/* Шторка «Окошки в сторис» — макет 4a: почти во весь экран, кнопка снизу поверх */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(29, 19, 22, 0.5);
+}
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  top: 56px;
+  bottom: 0;
+  z-index: 41;
+  transform: translateX(-50%);
+  width: min(560px, 100%);
+  border-radius: 30px 30px 0 0;
+  background: var(--bg);
+  overflow: hidden;
+  animation: rise 0.25s ease-out;
+}
+
+@keyframes rise {
+  from { transform: translate(-50%, 40px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet { animation: none; }
+}
+
+.scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px 18px calc(100px + var(--safe-bottom));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scroll > * { flex: none; }
+
+.grip {
+  align-self: center;
+  width: 40px;
+  height: 5px;
+  border-radius: 5px;
+  background: var(--past);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.close {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.scroll > [role='radiogroup'] { align-self: flex-start; }
+
+.editor {
+  display: flex;
+  gap: 12px;
+}
+
+/* Карточка 360×640 вдвое меньше */
+.preview {
+  flex: none;
+  width: 180px;
+  height: 320px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 14px 30px rgba(90, 30, 45, 0.22);
+}
+
+.previewScale {
+  width: 360px;
+  height: 640px;
+  transform: scale(0.5);
+  transform-origin: 0 0;
+}
+
+.side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.template {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.templateOn { border-color: var(--ink); }
+
+.swatch {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px rgba(42, 26, 31, 0.15);
+}
+
+.photoBtn {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1.5px dashed var(--dashed);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--cherry);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.handleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.handleInput {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  outline: none;
+}
+
+.handleInput:focus { border-color: var(--cherry); }
+
+.listHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.listTitle {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.listHint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--faint);
+}
+
+.days {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dayLabel {
+  flex: none;
+  width: 52px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1.5px solid var(--cherry);
+  border-radius: var(--radius-pill);
+  background: var(--cherry);
+  color: var(--on-cherry);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.chipOff {
+  border: 1.5px dashed var(--dashed);
+  background: transparent;
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+.empty {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.share {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: calc(24px + var(--safe-bottom));
+  min-height: 54px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: var(--shadow-dark);
+}
+
+.share:disabled { opacity: 0.5; }
+
+.warn {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--rose);
+  color: var(--cherry);
+  font-size: 13px;
+  font-weight: 700;
+}

@@ -16,6 +16,7 @@ import { MastersModule } from './masters/masters.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { RemindersModule } from './reminders/reminders.module'
 import { ServicesModule } from './services/services.module'
+import { StoriesModule } from './stories/stories.module'
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ServicesModule } from './services/services.module'
     BotModule,
     RemindersModule,
     HealthModule,
+    StoriesModule,
   ],
   providers: [
     // Глобально: любой новый роут закрыт, пока не помечен @Public.

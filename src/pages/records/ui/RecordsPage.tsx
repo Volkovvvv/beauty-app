@@ -10,6 +10,7 @@ import {
 } from '../../../entities/appointment'
 import { shortName, type Client } from '../../../entities/client'
 import type { BookingInitial } from '../../../features/add-appointment'
+import { storyWindows, windowsLabel } from '../../../features/story-windows'
 import { WeekGrid } from '../../../widgets/week-grid'
 import { addDays, dayOfMonth, fromMinutes, rangeLabel, weekday, WEEKDAYS_FULL, weekStart, type ISODate } from '../../../shared/lib/date'
 import { count, duration, rub } from '../../../shared/lib/format'
@@ -27,10 +28,12 @@ interface RecordsPageProps {
   onSelectDate: (date: ISODate) => void
   onOpenClient: (id: string) => void
   onBook: (initial: BookingInitial) => void
+  /** Открыть «Окошки в сторис» */
+  onStories: () => void
 }
 
 // «Записи»: неделя сеткой и список выбранного дня под ней
-export default function RecordsPage({ clientById, appointments, now, workday, date, onSelectDate, onOpenClient, onBook }: RecordsPageProps) {
+export default function RecordsPage({ clientById, appointments, now, workday, date, onSelectDate, onOpenClient, onBook, onStories }: RecordsPageProps) {
   const start = weekStart(date)
 
   // Зависит от начала недели, а не от выбранного дня: клик по дню внутри недели ничего не пересчитывает
@@ -50,6 +53,12 @@ export default function RecordsPage({ clientById, appointments, now, workday, da
     }
     return { days, booked, windows }
   }, [appointments, start])
+
+  // Окна на семь дней вперёд с сегодня — те, что попадут в сторис
+  const storyCount = useMemo(
+    () => storyWindows(appointments, workday, now, 'week').days.reduce((n, d) => n + d.times.length, 0),
+    [appointments, workday, now]
+  )
 
   const selected = week.days[weekday(date)]
   const label = (item: TimelineItem) =>
@@ -74,6 +83,13 @@ export default function RecordsPage({ clientById, appointments, now, workday, da
           {count(week.booked, ['запись', 'записи', 'записей'])} · {count(week.windows, ['окно', 'окна', 'окон'])}
         </span>
       </div>
+
+      {storyCount ? (
+        <button type="button" className={s.stories} onClick={onStories}>
+          <span>Окошки недели в сторис</span>
+          <span className={s.storiesCount}>{windowsLabel(storyCount)}</span>
+        </button>
+      ) : null}
 
       <WeekGrid days={week.days} selected={date} now={now} workday={workday} onSelect={onSelectDate} label={label} />
 

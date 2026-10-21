@@ -36,6 +36,8 @@ export interface AppointmentDraft {
   clientId: string
   date: ISODate
   start: Time
+  /** Длительность: по прайсу или своя, если мастер поправил */
+  minutes: number
   services: Service[]
   note?: string
   remind: boolean

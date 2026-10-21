@@ -39,6 +39,9 @@ async function bootstrap(): Promise<void> {
   app.use(/^\/api\/clients\/[^/]+\/photos$/, (req: Request, res: Response, next: NextFunction) =>
     photoBody(req, res, next),
   )
+  // Картинка сторис 1080×1920 — ещё крупнее фото
+  const storyBody = json({ limit: '4mb' })
+  app.use(/^\/api\/stories$/, (req: Request, res: Response, next: NextFunction) => storyBody(req, res, next))
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -16,6 +16,7 @@ import { NewAppointmentPage, type BookingInitial, type BookingResult } from '../
 import { AddClientPage, type ClientForm } from '../../features/add-client'
 import { PricesPage } from '../../features/edit-prices'
 import { OnboardingPage } from '../../features/onboarding'
+import { StorySheet, type ShareResult } from '../../features/story-windows'
 import { useStore } from '../model/useStore'
 import { backTarget, isTab, openView, TABS, type View } from '../model/navigation'
 
@@ -24,6 +25,7 @@ export default function App() {
   const now = useNow()
   const [view, setView] = useState<View>({ name: 'today' })
   const [toast, setToast] = useState('')
+  const [stories, setStories] = useState(false)
   // Выбранный день в «Записях» живёт здесь: переживает уход на другую вкладку
   const [recordsDate, setRecordsDate] = useState(now.date)
   // Загрузка дольше обычного — подсказываем про сеть, а не молча крутим «Загрузка…»
@@ -73,6 +75,7 @@ export default function App() {
   }, [onTab])
 
   const hideToast = useCallback(() => setToast(''), [])
+  const closeStories = useCallback(() => setStories(false), [])
   const clientById = useMemo(() => indexById(store.clients), [store.clients])
   // Значение контекста — одним объектом, пересобирается только при смене профиля
   const masterContext = useMemo(
@@ -116,6 +119,14 @@ export default function App() {
 
   const masterName = store.master?.name ?? telegramFirstName() ?? 'мастер'
   const workday = store.master?.workday ?? DEFAULT_WORKDAY
+  // Подпись на сторис: «Вика · ногти». Направлений больше двух — без перечисления
+  const specialtyLabels = store.specialties
+    .filter((sp) => store.master?.specialties.includes(sp.id))
+    .map((sp) => sp.label.toLowerCase())
+  const storyName =
+    specialtyLabels.length && specialtyLabels.length <= 2
+      ? `${masterName} · ${specialtyLabels.join(' и ')}`
+      : `${masterName} · бьюти-мастер`
 
   const open = (next: View) => setView((current) => openView(current, next))
   const goBack = () => setView((current) => backTarget(current))
@@ -210,6 +221,23 @@ export default function App() {
           onSelectDate={setRecordsDate}
           onOpenClient={openClient}
           onBook={book}
+          onStories={() => setStories(true)}
+        />
+      ) : null}
+
+      {stories && view.name === 'records' ? (
+        <StorySheet
+          appointments={store.appointments}
+          workday={workday}
+          now={now}
+          name={storyName}
+          username={store.master?.username ?? null}
+          onClose={closeStories}
+          onShared={(result: ShareResult) => {
+            setStories(false)
+            if (result === 'downloaded') setToast('Картинка сохранена — выложите её в сторис')
+          }}
+          onError={setToast}
         />
       ) : null}
 
@@ -231,6 +259,10 @@ export default function App() {
           now={now}
           // Отдельной рассылки о долге пока нет — открываем чат с клиенткой
           onRemind={(d) => d.client && write(d.client)}
+          onOpenDay={(date) => {
+            setRecordsDate(date)
+            setView({ name: 'records' })
+          }}
         />
       ) : null}
 
@@ -242,7 +274,14 @@ export default function App() {
           onBack={goBack}
           onBook={book}
           onReschedule={(a) =>
-            book({ clientId: a.clientId, serviceIds: a.services.map((s) => s.id), date: a.date, note: a.note, replaceId: a.id })
+            book({
+              clientId: a.clientId,
+              serviceIds: a.services.map((s) => s.id),
+              date: a.date,
+              minutes: a.minutes,
+              note: a.note,
+              replaceId: a.id,
+            })
           }
           onWrite={write}
           onInvite={invite}

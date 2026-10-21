@@ -13,7 +13,7 @@ const MASTER_SELECT = {
   dayEnd: true,
   notifyBeforeHours: true,
   notifyBeforeMinutes: true,
-  user: { select: { firstName: true, lastName: true, timezone: true } },
+  user: { select: { firstName: true, lastName: true, username: true, timezone: true } },
 } satisfies Prisma.MasterSelect
 
 type MasterRow = Prisma.MasterGetPayload<{ select: typeof MASTER_SELECT }>
@@ -26,6 +26,8 @@ export interface MasterView {
   onboardedAt: Date | null
   /** Имя из Telegram — подсказка, пока displayName не задан. */
   telegramName: string
+  /** Ник в Telegram без @ — подпись «пиши в директ» в сторис */
+  username: string | null
   timezone: string
   dayStart: number
   dayEnd: number
@@ -37,6 +39,7 @@ function toView({ user, ...profile }: MasterRow): MasterView {
   return {
     ...profile,
     telegramName: [user.firstName, user.lastName].filter(Boolean).join(' '),
+    username: user.username,
     timezone: user.timezone,
   }
 }

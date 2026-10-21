@@ -2,16 +2,21 @@ import { useMemo, useState } from 'react'
 import { servicesMinutes, servicesPrice, type Service } from '../../../entities/service'
 import type { Appointment, Workday } from '../../../entities/appointment'
 import { clientHint, clientStats, initials, type Client } from '../../../entities/client'
-import { addDays, dayOfMonth, fromMinutes, MONTHS_SHORT, monthIndex, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
+import { addDays, dayOfMonth, fromMinutes, MONTHS_SHORT, monthIndex, toMinutes, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
 import { duration, plural, rub } from '../../../shared/lib/format'
 import { cx } from '../../../shared/lib/cx'
 import { useMaster } from '../../../entities/master'
 import type { Now } from '../../../shared/lib/useNow'
 import { Avatar, BottomBar, Button, ChoiceChip, IconButton, Panel, Screen, Stack, TextAction, Title, ToggleRow } from '../../../shared/ui'
-import { daySlots, pickableDays } from '../model/slots'
+import { customStartProblem, daySlots, pickableDays } from '../model/slots'
 import type { BookingInitial, BookingResult } from '../model/types'
 import ClientPicker from './ClientPicker'
 import s from './NewAppointmentPage.module.css'
+
+// Шаг кнопок ± и пределы длительности, минуты — как у API
+const MINUTES_STEP = 15
+const MIN_MINUTES = 5
+const MAX_MINUTES = 600
 
 const dayLabel = (date: ISODate) => `${WEEKDAYS[weekday(date)]}, ${dayOfMonth(date)} ${MONTHS_SHORT[monthIndex(date)]}`
 
@@ -43,6 +48,16 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
     return today.some((t) => !t.busy) ? now.date : addDays(now.date, 1)
   })
   const [start, setStart] = useState<number | null>(initial.start ?? null)
+  // Время введено руками, а не выбрано из сетки
+  const [typed, setTyped] = useState(false)
+  // Что мастер набирает в поле минут: пустое поле во время набора — не ошибка
+  const [minutesText, setMinutesText] = useState<string | null>(null)
+  // Своя длительность; null — по прайсу. При переносе сохраняем ту, что была
+  const [ownMinutes, setOwnMinutes] = useState<number | null>(() => {
+    if (initial.minutes == null) return null
+    const picked = new Set(initial.serviceIds ?? [])
+    return initial.minutes === servicesMinutes(services.filter((s) => picked.has(s.id))) ? null : initial.minutes
+  })
   const [remind, setRemind] = useState(true)
   const [rebook, setRebook] = useState(true)
   const [picking, setPicking] = useState(false)
@@ -56,7 +71,8 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
 
   // В порядке прайса, а не в порядке нажатий
   const chosenServices = services.filter((svc) => selected.has(svc.id))
-  const minutes = servicesMinutes(chosenServices)
+  const priceMinutes = servicesMinutes(chosenServices)
+  const minutes = ownMinutes ?? priceMinutes
   const price = servicesPrice(chosenServices)
 
   const days = pickableDays(now.date, initial.date && initial.date > now.date ? initial.date : now.date)
@@ -65,9 +81,53 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
     () => daySlots({ appointments, date, minutes, now, workday, ignoreId: initial.replaceId, extra }),
     [appointments, date, minutes, now, workday, initial.replaceId, extra]
   )
-  // Выбранное время сбрасывается само, если после смены услуг или дня оно занято
-  const chosen = slots.some((t) => t.start === start && !t.busy) ? start : null
+  // Своё время проверяем отдельно и говорим, что не так: сетка не ограничивает мастера
+  const problem =
+    typed && start !== null
+      ? customStartProblem({ appointments, date, minutes, now, ignoreId: initial.replaceId }, start)
+      : null
+  // Время из сетки сбрасывается само, если после смены услуг или дня оно занято
+  const chosen = typed
+    ? problem
+      ? null
+      : start
+    : slots.some((t) => t.start === start && !t.busy)
+      ? start
+      : null
   const repeatWeeks = client?.repeatWeeks ?? 3
+
+  const pickSlot = (t: number) => {
+    setStart(t)
+    setTyped(false)
+  }
+
+  const typeStart = (value: string) => {
+    setStart(value ? toMinutes(value) : null)
+    setTyped(true)
+  }
+
+  const stepMinutes = (delta: number) => {
+    setMinutesText(null)
+    setOwnMinutes(Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, minutes + delta)))
+  }
+
+  const typeMinutes = (value: string) => {
+    setMinutesText(value)
+    const n = Number.parseInt(value, 10)
+    if (n > 0) setOwnMinutes(n)
+  }
+
+  const resetMinutes = () => {
+    setMinutesText(null)
+    setOwnMinutes(null)
+  }
+
+  const minutesProblem =
+    minutes && minutes < MIN_MINUTES
+      ? `Запись короче ${MIN_MINUTES} минут`
+      : minutes > MAX_MINUTES
+        ? 'Запись дольше 10 часов — разбейте её на два визита'
+        : null
 
   const toggleService = (id: string) =>
     setSelected((prev) => {
@@ -84,14 +144,14 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
   }
 
   const save = () => {
-    if (!clientId || !chosenServices.length || chosen === null) return
+    if (!clientId || !chosenServices.length || chosen === null || minutesProblem) return
     onSave(
-      { clientId, date, start: fromMinutes(chosen), services: chosenServices, note: initial.note, remind, rebook },
+      { clientId, date, start: fromMinutes(chosen), minutes, services: chosenServices, note: initial.note, remind, rebook },
       initial.replaceId
     )
   }
 
-  const ready = Boolean(client && chosenServices.length && chosen !== null)
+  const ready = Boolean(client && chosenServices.length && chosen !== null && !minutesProblem)
   const summary = [
     dayLabel(date) + (chosen !== null ? `, ${fromMinutes(chosen)}` : ''),
     minutes ? duration(minutes) : 'нет услуг',
@@ -165,12 +225,60 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
                 disabled={t.busy}
                 aria-pressed={t.start === chosen}
                 className={cx(s.slot, t.busy && s.slotBusy, t.start === chosen && s.slotOn)}
-                onClick={() => setStart(t.start)}
+                onClick={() => pickSlot(t.start)}
               >
                 {fromMinutes(t.start)}
               </button>
             ))}
           </div>
+          <Panel list>
+            <label className={s.row}>
+              <span className={s.rowTitle}>Своё время</span>
+              <input
+                className={s.time}
+                type="time"
+                step={300}
+                value={start !== null ? fromMinutes(start) : ''}
+                onChange={(e) => typeStart(e.target.value)}
+              />
+            </label>
+            <div className={s.row}>
+              <span className={s.rowTitle}>
+                Длительность
+                {ownMinutes !== null && priceMinutes ? (
+                  <span className={s.rowHint}>по прайсу {duration(priceMinutes)}</span>
+                ) : null}
+              </span>
+              <div className={s.stepper}>
+                <button type="button" className={s.step} aria-label="Короче" onClick={() => stepMinutes(-MINUTES_STEP)}>
+                  −
+                </button>
+                <label className={s.stepValue}>
+                  <input
+                    className={s.minutes}
+                    type="number"
+                    inputMode="numeric"
+                    min={MIN_MINUTES}
+                    max={MAX_MINUTES}
+                    aria-label="Длительность в минутах"
+                    value={minutesText ?? (minutes || '')}
+                    onChange={(e) => typeMinutes(e.target.value)}
+                    onBlur={() => setMinutesText(null)}
+                  />
+                  мин
+                </label>
+                <button type="button" className={s.step} aria-label="Дольше" onClick={() => stepMinutes(MINUTES_STEP)}>
+                  +
+                </button>
+              </div>
+            </div>
+            {ownMinutes !== null ? (
+              <div className={s.row}>
+                <TextAction onClick={resetMinutes}>Вернуть как в прайсе</TextAction>
+              </div>
+            ) : null}
+          </Panel>
+          {problem || minutesProblem ? <span className={s.problem}>{problem ?? minutesProblem}</span> : null}
         </Stack>
 
         <Panel list>
@@ -201,7 +309,13 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
           now={now}
           onPick={pickClient}
           onAddClient={() =>
-            onAddClient({ ...initial, date, start: chosen ?? undefined, serviceIds: chosenServices.map((s) => s.id) })
+            onAddClient({
+              ...initial,
+              date,
+              start: chosen ?? undefined,
+              minutes: ownMinutes ?? undefined,
+              serviceIds: chosenServices.map((s) => s.id),
+            })
           }
           onClose={() => setPicking(false)}
         />

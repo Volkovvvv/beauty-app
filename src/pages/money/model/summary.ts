@@ -2,6 +2,7 @@ import { mainService, servicesCost } from '../../../entities/service'
 import { debtOf, isActive, type Appointment } from '../../../entities/appointment'
 import type { Client } from '../../../entities/client'
 import { addDays, dayMonth, dayOfMonth, fromISO, MONTHS, rangeLabel, toISO, weekday, WEEKDAYS, weekStart, type ISODate } from '../../../shared/lib/date'
+import { plural } from '../../../shared/lib/format'
 
 export type Period = 'week' | 'month'
 
@@ -13,6 +14,19 @@ export interface MoneySummary {
   avgCheck: number
   materials: number
   services: { name: string; value: number }[]
+  /** Дни периода, в которые были записи, — от последнего к первому */
+  days: DayIncome[]
+  /** В период попадает сегодня */
+  current: boolean
+}
+
+export interface DayIncome {
+  date: ISODate
+  total: number
+  /** «3 записи» */
+  count: string
+  /** День ещё впереди: деньги только запланированы */
+  upcoming: boolean
 }
 
 export interface Debt {
@@ -45,20 +59,27 @@ const inRange = (list: readonly Appointment[], { from, to }: Range) =>
 
 const sum = (list: readonly Appointment[]) => list.reduce((total, a) => total + a.price, 0)
 
-function periodFrame(period: Period, today: ISODate) {
+/** Тот же день, но в соседнем периоде: листание недель и месяцев */
+export function shiftPeriod(period: Period, anchor: ISODate, step: number): ISODate {
+  return period === 'week' ? addDays(anchor, step * 7) : monthBounds(anchor, step).from
+}
+
+function periodFrame(period: Period, anchor: ISODate, today: ISODate) {
   if (period === 'week') {
-    const from = weekStart(today)
+    const from = weekStart(anchor)
     return {
       range: { from, to: addDays(from, 6) },
       prev: { from: addDays(from, -7), to: addDays(from, -1) },
       bars: WEEKDAYS.map((label, i) => ({ label: String(label), from: addDays(from, i), to: addDays(from, i) })),
-      highlight: weekday(today),
+      highlight: weekStart(today) === from ? weekday(today) : -1,
       caption: rangeLabel(from, addDays(from, 6)),
       deltaTo: 'к прошлой неделе',
     }
   }
-  const cur = monthBounds(today)
-  const last = monthBounds(today, -1)
+  const cur = monthBounds(anchor)
+  const last = monthBounds(anchor, -1)
+  const thisYear = fromISO(today).getFullYear()
+  const year = fromISO(cur.from).getFullYear()
   const days = dayOfMonth(cur.to)
   const bars: (Range & { label: string })[] = []
   for (let start = 1, n = 1; start <= days; start += 7, n += 1) {
@@ -68,16 +89,16 @@ function periodFrame(period: Period, today: ISODate) {
     range: cur,
     prev: last,
     bars,
-    highlight: Math.floor((dayOfMonth(today) - 1) / 7),
-    caption: MONTHS[cur.month],
+    highlight: today >= cur.from && today <= cur.to ? Math.floor((dayOfMonth(today) - 1) / 7) : -1,
+    caption: year === thisYear ? MONTHS[cur.month] : `${MONTHS[cur.month]} ${year}`,
     deltaTo: `к ${MONTHS_DAT[last.month]}`,
   }
 }
 
-// Сводка за неделю или месяц, в который попадает today.
+// Сводка за неделю или месяц, в который попадает anchor.
 // Считаются все неотменённые записи периода, в том числе ещё предстоящие
-export function moneySummary(appointments: readonly Appointment[], period: Period, today: ISODate): MoneySummary {
-  const frame = periodFrame(period, today)
+export function moneySummary(appointments: readonly Appointment[], period: Period, anchor: ISODate, today: ISODate): MoneySummary {
+  const frame = periodFrame(period, anchor, today)
   const list = inRange(appointments, frame.range)
   const total = sum(list)
   const before = sum(inRange(appointments, frame.prev))
@@ -85,8 +106,11 @@ export function moneySummary(appointments: readonly Appointment[], period: Perio
 
   // Выручка и материалы за один проход; выручка — по главной услуге записи
   const byService = new Map<string, number>()
+  const byDay = new Map<ISODate, { total: number; count: number }>()
   let materials = 0
   for (const a of list) {
+    const day = byDay.get(a.date) ?? { total: 0, count: 0 }
+    byDay.set(a.date, { total: day.total + a.price, count: day.count + 1 })
     const name = mainService(a.services)?.name ?? 'Другое'
     byService.set(name, (byService.get(name) ?? 0) + a.price)
     materials += servicesCost(a.services)
@@ -111,6 +135,15 @@ export function moneySummary(appointments: readonly Appointment[], period: Perio
     avgCheck: list.length ? total / list.length : 0,
     materials,
     services,
+    days: [...byDay]
+      .sort(([a], [b]) => (a < b ? 1 : -1))
+      .map(([date, d]) => ({
+        date,
+        total: d.total,
+        count: `${d.count} ${plural(d.count, ['запись', 'записи', 'записей'])}`,
+        upcoming: date > today,
+      })),
+    current: today >= frame.range.from && today <= frame.range.to,
   }
 }
 

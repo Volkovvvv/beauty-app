@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { servicesMinutes, servicesPrice, type Service } from '../../entities/service'
+import { servicesPrice, type Service } from '../../entities/service'
 import type { Appointment, AppointmentDraft, AppointmentStatus } from '../../entities/appointment'
 import type { Client } from '../../entities/client'
 import type { Master, Specialty } from '../../entities/master'
@@ -166,7 +166,7 @@ export function useStore(): Store {
       clientId: draft.clientId,
       date: draft.date,
       start: draft.start,
-      minutes: servicesMinutes(draft.services),
+      minutes: draft.minutes,
       services: draft.services,
       price: servicesPrice(draft.services),
       note: draft.note,
@@ -196,7 +196,7 @@ export function useStore(): Store {
         date: draft.date,
         start: draft.start,
         services: draft.services,
-        minutes: servicesMinutes(draft.services),
+        minutes: draft.minutes,
         price: servicesPrice(draft.services),
         confirmed: false,
         declined: false,
@@ -206,6 +206,7 @@ export function useStore(): Store {
         .patch<ApiAppointment>(`/appointments/${id}`, {
           startsAt: startsAtToApi(draft.date, draft.start),
           serviceIds: draft.services.map((s) => s.id),
+          duration: draft.minutes,
         })
         .then((saved) => setAppointments(patchItem<Appointment>(id, appointmentFromApi(saved))))
         .catch((e: unknown) => {
