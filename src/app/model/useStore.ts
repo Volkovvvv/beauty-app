@@ -28,14 +28,17 @@ import {
   type ApiSpecialty,
   type ApiWindowEdit,
   type ClientInput,
+  type OnboardingInput,
+  onboardingToApi,
 } from './mappers'
 
-/** Правка профиля: имя, направления, рабочие дни, отметка «первый вход пройден» */
+/** Правка профиля: имя, адрес, Instagram, сферы, рабочие дни */
 export interface MasterPatch {
   displayName?: string
+  address?: string
+  instagram?: string
   specialties?: string[]
   workDays?: number[]
-  onboarded?: boolean
 }
 
 export interface Store {
@@ -54,6 +57,8 @@ export interface Store {
   addPhoto: (clientId: string, file: File) => void
   inviteClient: (clientId: string) => Promise<string>
   updateMaster: (patch: MasterPatch) => Promise<void>
+  /** Знакомство при первом входе: ждёт ответа, ошибку показывает экран */
+  completeOnboarding: (input: OnboardingInput) => Promise<void>
   addService: (service: Omit<Service, 'id'>) => void
   updateService: (id: string, service: Omit<Service, 'id'>) => void
   removeService: (id: string) => void
@@ -282,11 +287,17 @@ export function useStore(): Store {
     return message
   }, [])
 
-  // Ждёт ответа: новые направления приносят стартовый прайс, его надо перечитать
+  // Ждёт ответа: экран показывает ошибку у полей (например, неверный ник Instagram)
   const updateMaster = useCallback(async (patch: MasterPatch) => {
     const saved = await api.patch<ApiMaster>('/master', patch)
     setMaster(masterFromApi(saved))
-    if (patch.specialties) setServices((await api.get<ApiService[]>('/services')).map(serviceFromApi))
+  }, [])
+
+  // Услуги заводит сервер в той же транзакции — перечитываем их уже с id
+  const completeOnboarding = useCallback(async (input: OnboardingInput) => {
+    const saved = await api.post<ApiMaster>('/master/onboarding', onboardingToApi(input))
+    setServices((await api.get<ApiService[]>('/services')).map(serviceFromApi))
+    setMaster(masterFromApi(saved))
   }, [])
 
   const addService = useCallback((service: Omit<Service, 'id'>) => {
@@ -383,6 +394,7 @@ export function useStore(): Store {
     addPhoto,
     inviteClient,
     updateMaster,
+    completeOnboarding,
     addService,
     updateService,
     removeService,

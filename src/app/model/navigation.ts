@@ -11,7 +11,9 @@ export type View = (
   | { name: 'client'; id: string }
   | { name: 'book'; initial: BookingInitial }
   | { name: 'profile' }
-  | { name: 'prices' }
+  | { name: 'services' }
+  // Онлайн-запись глазами клиентки — предпросмотр для мастера
+  | { name: 'bookingPreview' }
   // Окошки на месяц и серия сторис из них; month — первое число месяца
   | { name: 'monthWindows'; month: ISODate }
   | { name: 'monthStories'; month: ISODate }

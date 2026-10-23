@@ -49,10 +49,14 @@ model Master {
 
   // Как мастера зовут клиентки; null — берём имя из Telegram.
   displayName String?
+  // Где принимает — для онлайн-записи и сообщения «вы записаны».
+  address     String?
+  // Ник в Instagram без @: ссылка в онлайн-записи и подпись в сторис.
+  instagram   String?
 
   // Чем занимается: id из src/specialties/specialties.ts («nails», «brows»…).
   // Строки, а не enum: новая специализация — правка каталога, без миграции.
-  // От них зависят стартовый прайс, подписи карточки и тексты бота.
+  // От них зависят подсказки услуг, подписи карточки и тексты бота.
   specialties String[] @default([])
   // Мастер выбрал специализации при первом входе; null — показать выбор.
   onboardedAt DateTime?
@@ -87,18 +91,21 @@ model Master {
 
 // ─── Прайс ───────────────────────────────────────────────────────────────
 
-// Услуга из прайса мастера. Новому кабинету заводится стартовый прайс
-// маникюра (src/services/default-services.ts), дальше мастер правит свой.
+// Услуга из прайса мастера. Мастер вносит свои услуги при знакомстве
+// и дальше правит их в «Мои услуги».
 model Service {
   id       String @id @default(uuid())
   masterId String
   master   Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
 
-  name    String
-  minutes Int
-  // Цена и расход материалов на одну услугу — копейки.
-  price   Int
-  cost    Int    @default(0)
+  name     String
+  minutes  Int
+  // Цена — копейки.
+  price    Int
+  // Раздел, в котором услуга показана мастеру и клиентке: id специализации.
+  category String  @default("other")
+  // Видна клиенткам в онлайн-записи. Скрытую мастер записывает сам.
+  online   Boolean @default(true)
   // Порядок в прайсе: так мастер видит услуги в форме записи.
   sort    Int    @default(0)
 

@@ -20,6 +20,37 @@
 
 .week { font-size: 15px; font-weight: 700; }
 
+.monthToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+}
+
+.caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--glass-strong);
+  font-size: 12px;
+  font-weight: 800;
+  transition: transform 0.15s;
+}
+
+.caretOpen {
+  background: var(--ink);
+  color: var(--on-ink);
+  transform: rotate(180deg);
+}
+
+
 .counts {
   font-size: 13px;
   font-weight: 600;

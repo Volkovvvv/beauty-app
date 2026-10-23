@@ -4,6 +4,7 @@ import { SpecialtyPicker } from '../../../features/onboarding'
 import { cx } from '../../../shared/lib/cx'
 import { fromMinutes, WEEKDAYS } from '../../../shared/lib/date'
 import { count } from '../../../shared/lib/format'
+import { INSTAGRAM_ERROR, instagramHandle } from '../../../shared/lib/instagram'
 import { Avatar, BottomBar, Button, IconButton, Panel, Screen, Stack, TextField, Title } from '../../../shared/ui'
 import { initials } from '../../../entities/client'
 import s from './ProfilePage.module.css'
@@ -11,26 +12,35 @@ import s from './ProfilePage.module.css'
 interface ProfilePageProps {
   catalog: readonly Specialty[]
   servicesCount: number
-  onSave: (patch: { displayName: string; specialties: string[]; workDays: number[] }) => Promise<void>
-  onOpenPrices: () => void
+  /** Сколько услуг скрыто из онлайн-записи */
+  hiddenCount: number
+  onSave: (patch: { displayName: string; address: string; instagram: string; specialties: string[]; workDays: number[] }) => Promise<void>
+  onOpenServices: () => void
+  onOpenBooking: () => void
   onBack: () => void
 }
 
 const same = <T,>(a: readonly T[], b: readonly T[]) => a.length === b.length && a.every((x, i) => x === b[i])
 
-// Профиль мастера: имя для клиенток, направления, рабочие дни и прайс
-export default function ProfilePage({ catalog, servicesCount, onSave, onOpenPrices, onBack }: ProfilePageProps) {
+// Профиль мастера: имя, адрес и Instagram для клиенток, сферы, рабочие дни и услуги
+export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSave, onOpenServices, onOpenBooking, onBack }: ProfilePageProps) {
   const { master } = useMaster()
   const [name, setName] = useState(master.name)
+  const [address, setAddress] = useState(master.address ?? '')
+  const [instagram, setInstagram] = useState(master.instagram ? `@${master.instagram}` : '')
   const [picked, setPicked] = useState(master.specialties)
   const [workDays, setWorkDays] = useState<readonly number[]>(master.workday.days)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const handle = instagramHandle(instagram)
   const changed =
-    name.trim() !== master.name || !same(picked, master.specialties) || !same(workDays, master.workday.days)
-  const ready = changed && name.trim().length > 0 && picked.length > 0 && !saving
-  const added = picked.filter((id) => !master.specialties.includes(id))
+    name.trim() !== master.name ||
+    address.trim() !== (master.address ?? '') ||
+    (handle ?? instagram) !== (master.instagram ?? '') ||
+    !same(picked, master.specialties) ||
+    !same(workDays, master.workday.days)
+  const ready = changed && name.trim().length > 0 && picked.length > 0 && handle !== null && !saving
 
   const toggleDay = (day: number) =>
     setWorkDays((list) => (list.includes(day) ? list.filter((d) => d !== day) : [...list, day].sort((a, b) => a - b)))
@@ -39,7 +49,7 @@ export default function ProfilePage({ catalog, servicesCount, onSave, onOpenPric
     if (!ready) return
     setSaving(true)
     setError('')
-    onSave({ displayName: name.trim(), specialties: picked, workDays: [...workDays] })
+    onSave({ displayName: name.trim(), address: address.trim(), instagram: handle ?? '', specialties: picked, workDays: [...workDays] })
       .catch((e: Error) => setError(e.message))
       .finally(() => setSaving(false))
   }
@@ -60,15 +70,21 @@ export default function ProfilePage({ catalog, servicesCount, onSave, onOpenPric
         </div>
 
         <TextField label="Как вас зовут клиентки" value={name} onChange={setName} maxLength={100} />
+        <TextField label="Где принимаете" value={address} onChange={setAddress} placeholder="Улица, дом, студия" maxLength={200} />
+        <TextField
+          label="Instagram"
+          value={instagram}
+          onChange={setInstagram}
+          placeholder="@username"
+          maxLength={100}
+          invalid={handle === null}
+          hint={handle === null ? INSTAGRAM_ERROR : 'Ссылка в онлайн-записи и подпись в сторис'}
+        />
 
         <Stack gap={10}>
-          <span className={s.label}>Направления</span>
+          <span className={s.label}>Сферы</span>
           <SpecialtyPicker catalog={catalog} value={picked} onChange={setPicked} />
-          <span className={s.sub}>
-            {added.length
-              ? 'Новое направление добавит в прайс свои услуги — их можно поправить или убрать'
-              : 'Первое выбранное — основное: от него обычный интервал между визитами новых клиенток'}
-          </span>
+          <span className={s.sub}>Первая — основная: от неё обычный интервал между визитами новых клиенток. Услуги от выбора не меняются</span>
         </Stack>
 
         <Stack gap={10}>
@@ -94,10 +110,20 @@ export default function ProfilePage({ catalog, servicesCount, onSave, onOpenPric
         </Stack>
 
         <Panel list>
-          <button type="button" className={s.row} onClick={onOpenPrices}>
+          <button type="button" className={s.row} onClick={onOpenServices}>
             <span className={s.rowText}>
-              <span className={s.rowTitle}>Прайс</span>
-              <span className={s.sub}>{count(servicesCount, ['услуга', 'услуги', 'услуг'])}</span>
+              <span className={s.rowTitle}>Мои услуги</span>
+              <span className={s.sub}>
+                {count(servicesCount, ['услуга', 'услуги', 'услуг'])}
+                {hiddenCount ? ` · ${hiddenCount} скрыто из онлайн-записи` : ''}
+              </span>
+            </span>
+            <span className={s.chevron} aria-hidden="true">›</span>
+          </button>
+          <button type="button" className={s.row} onClick={onOpenBooking}>
+            <span className={s.rowText}>
+              <span className={s.rowTitle}>Онлайн-запись</span>
+              <span className={s.sub}>Посмотреть, как её видят клиентки</span>
             </span>
             <span className={s.chevron} aria-hidden="true">›</span>
           </button>

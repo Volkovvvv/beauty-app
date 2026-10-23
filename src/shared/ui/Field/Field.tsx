@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { cx } from '../../lib/cx'
 import s from './Field.module.css'
 
 interface TextFieldProps {
@@ -7,26 +8,29 @@ interface TextFieldProps {
   onChange: (value: string) => void
   placeholder?: string
   hint?: string
+  /** Значение не подходит: рамка и подсказка красные */
+  invalid?: boolean
   maxLength?: number
   autoFocus?: boolean
 }
 
 // Поле ввода с подписью сверху
-export function TextField({ label, value, onChange, placeholder, hint, maxLength = 200, autoFocus }: TextFieldProps) {
+export function TextField({ label, value, onChange, placeholder, hint, invalid, maxLength = 200, autoFocus }: TextFieldProps) {
   const id = useId()
   return (
     <div className={s.field}>
       <label className={s.label} htmlFor={id}>{label}</label>
       <input
         id={id}
-        className={s.input}
+        className={cx(s.input, invalid && s.invalid)}
+        aria-invalid={invalid || undefined}
         value={value}
         placeholder={placeholder}
         maxLength={maxLength}
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}
       />
-      {hint ? <span className={s.hint}>{hint}</span> : null}
+      {hint ? <span className={cx(s.hint, invalid && s.hintError)}>{hint}</span> : null}
     </div>
   )
 }

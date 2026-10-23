@@ -1,1 +1,1 @@
-export { default as PricesPage } from './ui/PricesPage'
+export { default as ServicesPage } from './ui/ServicesPage'

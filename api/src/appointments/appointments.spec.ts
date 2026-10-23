@@ -17,8 +17,8 @@ describe('overlaps', () => {
 
 describe('buildSnapshot', () => {
   const list = [
-    { id: 'a', name: 'Коррекция', minutes: 90, price: 260_000, cost: 25_000 },
-    { id: 'b', name: 'Дизайн', minutes: 30, price: 50_000, cost: 6_000 },
+    { id: 'a', name: 'Коррекция', minutes: 90, price: 260_000 },
+    { id: 'b', name: 'Дизайн', minutes: 30, price: 50_000 },
   ]
 
   it('копирует услуги в порядке выбора и считает итог', () => {

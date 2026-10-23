@@ -14,8 +14,9 @@ import { MoneyPage } from '../../pages/money'
 import { ProfilePage } from '../../pages/profile'
 import { NewAppointmentPage, type BookingInitial, type BookingResult } from '../../features/add-appointment'
 import { AddClientPage, type ClientForm } from '../../features/add-client'
-import { PricesPage } from '../../features/edit-prices'
+import { ServicesPage } from '../../features/edit-prices'
 import { OnboardingPage } from '../../features/onboarding'
+import { BookingPreviewPage } from '../../features/online-booking'
 import { MonthStoriesPage, MonthWindowsPage, monthStart, StorySheet, type ShareResult } from '../../features/story-windows'
 import { useStore } from '../model/useStore'
 import { backTarget, isTab, openView, TABS, type View } from '../model/navigation'
@@ -29,6 +30,8 @@ export default function App() {
   const [view, setView] = useState<View>({ name: 'today' })
   const [toast, setToast] = useState('')
   const [stories, setStories] = useState(false)
+  // Знакомство только что пройдено: экран «Всё готово» держим, пока мастер не нажмёт «Открыть приложение»
+  const [welcome, setWelcome] = useState(false)
   // Выбранный день в «Записях» живёт здесь: переживает уход на другую вкладку
   const [recordsDate, setRecordsDate] = useState(now.date)
   // Загрузка дольше обычного — подсказываем про сеть, а не молча крутим «Загрузка…»
@@ -110,11 +113,26 @@ export default function App() {
     )
   }
 
-  // Первый вход: выбор направлений вместо вкладок, пока мастер его не пройдёт
-  if (store.master && !store.master.onboarded) {
+  // Первый вход: знакомство вместо вкладок, пока мастер его не пройдёт
+  if (store.master && (!store.master.onboarded || welcome)) {
     return (
       <AppShell>
-        <OnboardingPage catalog={store.specialties} telegramName={store.master.telegramName} onDone={store.updateMaster} />
+        <OnboardingPage
+          catalog={store.specialties}
+          telegramName={store.master.telegramName}
+          onSubmit={(input) => {
+            setWelcome(true)
+            return store.completeOnboarding(input).catch((e: unknown) => {
+              setWelcome(false)
+              throw e
+            })
+          }}
+          onFinish={() => {
+            haptic('medium')
+            setWelcome(false)
+            setView({ name: 'today' })
+          }}
+        />
         <Toast message={toast} onHide={hideToast} />
       </AppShell>
     )
@@ -123,12 +141,14 @@ export default function App() {
   const masterName = store.master?.name ?? telegramFirstName() ?? 'мастер'
   const workday = store.master?.workday ?? DEFAULT_WORKDAY
   // Подпись на сторис: «Вика · ногти». Направлений больше двух — без перечисления
-  const specialtyLabels = store.specialties
-    .filter((sp) => store.master?.specialties.includes(sp.id))
-    .map((sp) => sp.label.toLowerCase())
+  const specialtyTitles = store.specialties.filter((sp) => store.master?.specialties.includes(sp.id)).map((sp) => sp.label)
+  const specialtyLabels = specialtyTitles.map((label) => label.toLowerCase())
+  // Под именем в онлайн-записи: что входит и где — «Маникюр, гель-лак, наращивание · Таганская, 24»
+  const summary = store.specialties.find((sp) => sp.id === store.master?.specialties[0])?.summary ?? ''
+  const bookingSubtitle = [summary.charAt(0).toUpperCase() + summary.slice(1), store.master?.address].filter(Boolean).join(' · ')
   const storyName =
     specialtyLabels.length && specialtyLabels.length <= 2
-      ? `${masterName} · ${specialtyLabels.join(' и ')}`
+      ? `${masterName} · ${specialtyLabels.join(', ')}`
       : `${masterName} · бьюти-мастер`
 
   const open = (next: View) => setView((current) => openView(current, next))
@@ -234,7 +254,7 @@ export default function App() {
           workday={workday}
           now={now}
           name={storyName}
-          username={store.master?.username ?? null}
+          username={store.master?.instagram ?? store.master?.username ?? null}
           onClose={closeStories}
           onShared={(result: ShareResult) => {
             setStories(false)
@@ -276,7 +296,7 @@ export default function App() {
           edits={store.windowEdits}
           month={view.month}
           name={storyName}
-          username={store.master?.username ?? null}
+          username={store.master?.instagram ?? store.master?.username ?? null}
           onShared={(result, left) => {
             if (result === 'downloaded') setToast(left ? `Картинка сохранена, осталось ${left}` : 'Все картинки сохранены — выложите их в сторис')
             else if (!left) setToast('Серия готова')
@@ -356,18 +376,36 @@ export default function App() {
         <ProfilePage
           catalog={store.specialties}
           servicesCount={store.services.length}
+          hiddenCount={store.services.filter((svc) => !svc.online).length}
           onSave={(patch) => store.updateMaster(patch).then(() => setToast('Сохранено'))}
-          onOpenPrices={() => open({ name: 'prices' })}
+          onOpenServices={() => open({ name: 'services' })}
+          onOpenBooking={() => open({ name: 'bookingPreview' })}
           onBack={goBack}
         />
       ) : null}
 
-      {view.name === 'prices' ? (
-        <PricesPage
+      {view.name === 'services' ? (
+        <ServicesPage
           services={store.services}
+          catalog={store.specialties}
           onAdd={store.addService}
           onUpdate={store.updateService}
           onRemove={store.removeService}
+          onBack={goBack}
+        />
+      ) : null}
+
+      {view.name === 'bookingPreview' ? (
+        <BookingPreviewPage
+          title={storyName}
+          subtitle={bookingSubtitle}
+          address={store.master?.address ?? null}
+          services={store.services}
+          appointments={store.appointments}
+          workday={workday}
+          now={now}
+          edits={store.windowEdits}
+          onLoadEdits={store.loadWindowEdits}
           onBack={goBack}
         />
       ) : null}

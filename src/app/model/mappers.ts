@@ -12,7 +12,8 @@ export interface ApiService {
   name: string
   minutes: number
   price: number
-  cost: number
+  category: string
+  online: boolean
 }
 
 export interface ApiClient {
@@ -47,6 +48,8 @@ export interface ApiAppointment {
 
 export interface ApiMaster {
   displayName: string | null
+  address: string | null
+  instagram: string | null
   telegramName: string
   username: string | null
   dayStart: number
@@ -70,6 +73,7 @@ export interface ApiSpecialty {
   cardLabel: string
   correction: boolean
   repeatWeeks: number
+  suggestions: { name: string; minutes: number }[]
 }
 
 const rub = (kopecks: number) => Math.round(kopecks / 100)
@@ -93,7 +97,8 @@ export const serviceFromApi = (s: ApiService): Service => ({
   name: s.name,
   minutes: s.minutes,
   price: rub(s.price),
-  cost: rub(s.cost),
+  category: s.category,
+  online: s.online,
 })
 
 export const clientFromApi = (c: ApiClient): Client => ({
@@ -146,6 +151,8 @@ export const masterFromApi = (m: ApiMaster): Master => ({
   name: m.displayName ?? m.telegramName.split(' ')[0],
   telegramName: m.telegramName,
   username: m.username,
+  address: m.address,
+  instagram: m.instagram,
   workday: { start: m.dayStart, end: m.dayEnd, days: m.workDays },
   specialties: m.specialties,
   onboarded: m.onboardedAt !== null,
@@ -158,6 +165,7 @@ export const specialtyFromApi = (s: ApiSpecialty): Specialty => ({
   correction: s.correction,
   repeatWeeks: s.repeatWeeks,
   summary: s.summary,
+  suggestions: s.suggestions,
 })
 
 /** Правка услуги прайса: рубли → копейки */
@@ -165,7 +173,22 @@ export const serviceToApi = (s: Omit<Service, 'id'>) => ({
   name: s.name,
   minutes: s.minutes,
   price: kop(s.price),
-  cost: kop(s.cost),
+  category: s.category,
+  online: s.online,
+})
+
+/** Знакомство целиком: о себе, сферы и свои услуги */
+export interface OnboardingInput {
+  displayName: string
+  address: string
+  instagram: string
+  specialties: string[]
+  services: { name: string; minutes: number; price: number; category: string }[]
+}
+
+export const onboardingToApi = (o: OnboardingInput) => ({
+  ...o,
+  services: o.services.map((s) => ({ ...s, price: kop(s.price) })),
 })
 
 /** Новая клиентка из формы. Пустые поля не шлём — сервер подставит умолчания */

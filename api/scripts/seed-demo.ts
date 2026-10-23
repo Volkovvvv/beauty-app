@@ -10,7 +10,6 @@
 import 'dotenv/config'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient, type Prisma } from '@prisma/client'
-import { starterServices } from '../src/specialties/specialties'
 
 if (process.env.NODE_ENV === 'production') throw new Error('seed:demo только для разработки')
 
@@ -38,6 +37,17 @@ const TEMPLATE: Array<Array<[number, number, string[]]>> = [
   [],
 ]
 
+// Прайс тестового мастера: имена — те, что встречаются в TEMPLATE
+const SERVICES: Array<[string, number, number]> = [
+  ['Снятие', 20, 400],
+  ['Маникюр', 40, 1200],
+  ['Гель-лак', 60, 1600],
+  ['Наращивание', 120, 3500],
+  ['Коррекция', 90, 2600],
+  ['Дизайн', 30, 500],
+  ['Педикюр', 80, 2400],
+]
+
 const DAY = 86_400_000
 const atLocal = (day: Date, h: number, m: number) => new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m)
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
@@ -55,7 +65,9 @@ async function main() {
         userId: user.id,
         specialties: ['nails'],
         onboardedAt: new Date(),
-        services: { create: starterServices(['nails'], []).map((s, sort) => ({ ...s, sort })) },
+        services: {
+          create: SERVICES.map(([name, minutes, rub], sort) => ({ name, minutes, price: rub * 100, category: 'nails', sort })),
+        },
       },
     }))
   const price = await prisma.service.findMany({ where: { masterId: master.id, archivedAt: null } })
@@ -63,7 +75,7 @@ async function main() {
   const snapshot = (names: string[]) =>
     names.flatMap((n) => {
       const s = byName.get(n)
-      return s ? [{ id: s.id, name: s.name, minutes: s.minutes, price: s.price, cost: s.cost }] : []
+      return s ? [{ id: s.id, name: s.name, minutes: s.minutes, price: s.price }] : []
     })
 
   await prisma.client.deleteMany({ where: { masterId: master.id } })

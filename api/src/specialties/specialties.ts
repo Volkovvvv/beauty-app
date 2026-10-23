@@ -1,29 +1,26 @@
 /**
- * Каталог специализаций бьюти-мастеров.
+ * Каталог специализаций (сфер) бьюти-мастеров.
  *
- * От специализации зависит не логика, а слова и стартовые данные: прайс нового
- * кабинета, через сколько недель клиентка обычно возвращается, как подписано
- * поле «особенности» в карточке и что бот пишет, когда пора записаться снова.
- * Хранится строкой, а не enum в базе: новая специализация — правка этого файла,
- * без миграции.
+ * От специализации зависит не логика, а слова и подсказки: какие названия
+ * услуг предложить при знакомстве, через сколько недель клиентка обычно
+ * возвращается, как подписано поле «особенности» в карточке и что бот пишет,
+ * когда пора записаться снова. Хранится строкой, а не enum в базе: новая
+ * специализация — правка этого файла, без миграции.
  */
 
-export interface StarterService {
+/** Подсказка при знакомстве: название в один тап, цену мастер вписывает сам */
+export interface ServiceSuggestion {
   name: string
   minutes: number
-  /** Копейки */
-  price: number
-  /** Расход материалов, копейки */
-  cost: number
 }
 
 export interface Specialty {
   id: string
-  /** «Ногти» — как мастер выбирает себя при первом входе */
+  /** «Ногти» — как мастер выбирает сферу при знакомстве и как подписан раздел услуг */
   label: string
-  /** Коротко, что входит: подпись под направлением на экране выбора */
+  /** Коротко, что входит */
   summary: string
-  services: readonly StarterService[]
+  suggestions: readonly ServiceSuggestion[]
   /** Обычный интервал между визитами — по умолчанию для новой клиентки */
   repeatWeeks: number
   /** Подпись поля карточки клиентки: «Форма и длина», «Тип кожи» */
@@ -32,113 +29,90 @@ export interface Specialty {
   correction: boolean
 }
 
-// Цены — ориентир по рынку, мастер правит свой прайс в приложении.
-// Расход материалов — примерно десятая часть цены.
-const rub = (n: number) => n * 100
-const svc = (name: string, minutes: number, price: number, cost = Math.round(price / 10)): StarterService => ({
-  name,
-  minutes,
-  price: rub(price),
-  cost: rub(cost),
-})
+const sug = (name: string, minutes: number): ServiceSuggestion => ({ name, minutes })
 
+// Порядок — как на экране знакомства. «Другое» последним: без подсказок
 export const SPECIALTIES: readonly Specialty[] = [
   {
     id: 'nails',
-    summary: 'маникюр, гель-лак, наращивание',
     label: 'Ногти',
+    summary: 'маникюр, гель-лак, наращивание',
     repeatWeeks: 3,
     cardLabel: 'Форма и длина',
     correction: true,
-    services: [
-      svc('Снятие', 20, 400, 30),
-      svc('Маникюр', 40, 1200, 80),
-      svc('Гель-лак', 60, 1600, 150),
-      svc('Наращивание', 120, 3500, 400),
-      svc('Коррекция', 90, 2600, 250),
-      svc('Дизайн', 30, 500, 60),
-      svc('Педикюр', 80, 2400, 150),
-    ],
+    suggestions: [sug('Маникюр', 40), sug('Педикюр', 80), sug('Гель-лак', 60), sug('Наращивание', 120), sug('Снятие', 20)],
   },
   {
     id: 'brows',
-    summary: 'коррекция, окрашивание, ламинирование',
-    label: 'Брови',
+    label: 'Брови и ресницы',
+    summary: 'коррекция, окрашивание, наращивание',
     repeatWeeks: 4,
-    cardLabel: 'Форма бровей',
+    cardLabel: 'Форма и изгиб',
     correction: true,
-    services: [
-      svc('Коррекция бровей', 30, 900),
-      svc('Окрашивание бровей', 30, 800),
-      svc('Ламинирование бровей', 60, 2200),
-      svc('Перманент бровей', 150, 9000),
-    ],
-  },
-  {
-    id: 'lashes',
-    summary: 'наращивание, коррекция, ламинирование',
-    label: 'Ресницы',
-    repeatWeeks: 3,
-    cardLabel: 'Изгиб и длина',
-    correction: true,
-    services: [
-      svc('Наращивание ресниц, классика', 120, 2800),
-      svc('Наращивание ресниц, 2D', 150, 3300),
-      svc('Коррекция ресниц', 90, 1800),
-      svc('Снятие ресниц', 20, 400),
-      svc('Ламинирование ресниц', 60, 2300),
-    ],
+    suggestions: [sug('Коррекция бровей', 30), sug('Окрашивание', 30), sug('Ламинирование', 60), sug('Наращивание ресниц', 120)],
   },
   {
     id: 'hair',
-    summary: 'стрижки, окрашивание, укладки',
     label: 'Волосы',
+    summary: 'стрижки, окрашивание, укладки',
     repeatWeeks: 6,
     cardLabel: 'Волосы',
     correction: false,
-    services: [
-      svc('Стрижка женская', 60, 2000),
-      svc('Стрижка мужская', 40, 1200),
-      svc('Окрашивание', 180, 6000),
-      svc('Тонирование', 90, 3000),
-      svc('Укладка', 45, 1500),
-    ],
+    suggestions: [sug('Женская стрижка', 60), sug('Мужская стрижка', 40), sug('Окрашивание', 180), sug('Укладка', 45)],
   },
   {
     id: 'makeup',
-    summary: 'дневной, вечерний, свадебный',
     label: 'Макияж',
+    summary: 'дневной, вечерний, свадебный',
     repeatWeeks: 8,
     cardLabel: 'Тип кожи',
     correction: false,
-    services: [svc('Дневной макияж', 60, 2500), svc('Вечерний макияж', 90, 3500), svc('Свадебный макияж', 120, 6000)],
+    suggestions: [sug('Дневной макияж', 60), sug('Вечерний макияж', 90), sug('Свадебный образ', 120)],
   },
   {
     id: 'cosmetology',
-    summary: 'чистки, пилинги, уходы',
     label: 'Косметология',
+    summary: 'чистки, пилинги, уходы',
     repeatWeeks: 4,
     cardLabel: 'Тип кожи',
     correction: false,
-    services: [svc('Чистка лица', 90, 3500), svc('Пилинг', 45, 2500), svc('Уход по типу кожи', 60, 3000), svc('Массаж лица', 45, 2000)],
+    suggestions: [sug('Чистка лица', 90), sug('Пилинг', 45), sug('Уходовая процедура', 60)],
   },
   {
     id: 'massage',
-    summary: 'общий, спина, антицеллюлитный',
     label: 'Массаж',
+    summary: 'классический, спина, лимфодренаж',
     repeatWeeks: 1,
     cardLabel: 'Зоны и пожелания',
     correction: false,
-    services: [svc('Общий массаж', 60, 3000), svc('Массаж спины', 40, 2000), svc('Антицеллюлитный массаж', 60, 3200)],
+    suggestions: [sug('Классический массаж', 60), sug('Массаж спины', 40), sug('Лимфодренаж', 60)],
   },
   {
     id: 'depilation',
-    summary: 'шугаринг и воск',
     label: 'Депиляция',
+    summary: 'шугаринг, воск, лазер',
     repeatWeeks: 4,
     cardLabel: 'Зоны',
     correction: false,
-    services: [svc('Шугаринг, ноги полностью', 60, 2000), svc('Шугаринг, подмышки', 20, 700), svc('Шугаринг, бикини', 40, 2200)],
+    suggestions: [sug('Шугаринг', 60), sug('Восковая депиляция', 60), sug('Лазерная эпиляция', 45)],
+  },
+  {
+    id: 'tattoo',
+    label: 'Тату и пирсинг',
+    summary: 'тату, пирсинг, перманент',
+    repeatWeeks: 8,
+    cardLabel: 'Эскиз и зона',
+    correction: false,
+    suggestions: [sug('Тату', 180), sug('Пирсинг', 30), sug('Перманентный макияж', 150)],
+  },
+  {
+    id: 'other',
+    label: 'Другое',
+    summary: 'всё, что не подошло выше',
+    repeatWeeks: 4,
+    cardLabel: 'Особенности',
+    correction: false,
+    suggestions: [],
   },
 ]
 
@@ -152,24 +126,6 @@ export const specialtiesOf = (ids: readonly string[]): Specialty[] =>
     const s = byId.get(id)
     return s ? [s] : []
   })
-
-/**
- * Стартовые услуги для новых специализаций кабинета. Услуги, которые у мастера
- * уже есть с тем же названием, не дублируются.
- */
-export function starterServices(ids: readonly string[], existingNames: readonly string[]): StarterService[] {
-  const taken = new Set(existingNames.map((n) => n.trim().toLowerCase()))
-  const out: StarterService[] = []
-  for (const s of specialtiesOf(ids)) {
-    for (const service of s.services) {
-      const key = service.name.toLowerCase()
-      if (taken.has(key)) continue
-      taken.add(key)
-      out.push(service)
-    }
-  }
-  return out
-}
 
 /** Интервал по умолчанию для новой клиентки — по первой специализации мастера */
 export const defaultRepeatWeeks = (ids: readonly string[]): number => specialtiesOf(ids)[0]?.repeatWeeks ?? 4

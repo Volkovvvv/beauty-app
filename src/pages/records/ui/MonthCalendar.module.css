@@ -1,0 +1,136 @@
+/* Месяц в «Записях» — макет 3a, раскрывается по «Октябрь ▾» */
+
+.panel {
+  padding: 12px;
+  border-radius: 24px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 0 4px 4px;
+}
+
+.month {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.arrows {
+  display: flex;
+  gap: 6px;
+}
+
+.arrows {
+  align-items: center;
+}
+
+.arrows > [aria-label] { background: var(--bg); }
+
+.today {
+  min-height: 40px;
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  color: var(--cherry);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--faint);
+}
+
+.cell {
+  height: 46px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  box-sizing: border-box;
+  background: transparent;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.num {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.busy {
+  background: var(--cherry);
+  color: var(--on-cherry);
+}
+
+.open { background: #e2b8c0; }
+
+.off {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px #e6d6d9;
+}
+
+.past { opacity: 0.45; }
+
+.today { box-shadow: inset 0 0 0 2px var(--ink); }
+
+.on {
+  background: var(--ink);
+  color: var(--on-cherry);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 4px 2px 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+}
+
+.summary {
+  padding: 0 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}

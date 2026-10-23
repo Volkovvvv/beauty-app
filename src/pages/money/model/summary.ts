@@ -1,4 +1,4 @@
-import { mainService, servicesCost } from '../../../entities/service'
+import { mainService } from '../../../entities/service'
 import { appointmentTitle, byStart, debtOf, isActive, type Appointment } from '../../../entities/appointment'
 import type { Client } from '../../../entities/client'
 import {
@@ -26,7 +26,8 @@ export interface MoneySummary {
   /** Столбики недели или месяца; у недели date — день столбика */
   bars: { label: string; value: number; highlight: boolean; date?: ISODate }[]
   avgCheck: number
-  materials: number
+  /** Сколько записей в периоде */
+  records: number
   services: { name: string; value: number }[]
   /** Дни периода, в которые были записи, — от последнего к первому */
   days: DayIncome[]
@@ -129,16 +130,14 @@ export function moneySummary(appointments: readonly Appointment[], period: Perio
   const before = sum(inRange(appointments, frame.prev))
   const delta = period === 'day' ? dayDelta(appointments, anchor, list.length, total) : percentDelta(total, before, frame.deltaTo)
 
-  // Выручка и материалы за один проход; выручка — по главной услуге записи
+  // Выручка по дням и по главной услуге записи — за один проход
   const byService = new Map<string, number>()
   const byDay = new Map<ISODate, { total: number; count: number }>()
-  let materials = 0
   for (const a of list) {
     const day = byDay.get(a.date) ?? { total: 0, count: 0 }
     byDay.set(a.date, { total: day.total + a.price, count: day.count + 1 })
     const name = mainService(a.services)?.name ?? 'Другое'
     byService.set(name, (byService.get(name) ?? 0) + a.price)
-    materials += servicesCost(a.services)
   }
 
   // Три крупных услуги и «остальное» одной строкой
@@ -158,7 +157,7 @@ export function moneySummary(appointments: readonly Appointment[], period: Perio
     delta,
     bars: frame.bars.map((b, i) => ({ label: b.label, value: sum(inRange(list, b)), highlight: i === frame.highlight, date: b.date })),
     avgCheck: list.length ? total / list.length : 0,
-    materials,
+    records: list.length,
     services,
     days: [...byDay]
       .sort(([a], [b]) => (a < b ? 1 : -1))

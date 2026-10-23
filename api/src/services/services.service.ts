@@ -8,7 +8,8 @@ const SERVICE_SELECT = {
   name: true,
   minutes: true,
   price: true,
-  cost: true,
+  category: true,
+  online: true,
   sort: true,
 } satisfies Prisma.ServiceSelect
 

@@ -4,15 +4,16 @@ export interface Service {
   name: string
   minutes: number
   price: number
-  /** Расход материалов на одну услугу — для «Деньги → Материалы» */
-  cost: number
+  /** Раздел — id сферы из каталога («nails», «brows»…) */
+  category: string
+  /** Видна клиенткам в онлайн-записи */
+  online: boolean
 }
 
 type List = readonly Service[]
 
 export const servicesMinutes = (list: List): number => list.reduce((sum, s) => sum + s.minutes, 0)
 export const servicesPrice = (list: List): number => list.reduce((sum, s) => sum + s.price, 0)
-export const servicesCost = (list: List): number => list.reduce((sum, s) => sum + s.cost, 0)
 
 /** «Маникюр + гель-лак»: первая с заглавной, остальные строчными */
 export function servicesTitle(list: List): string {

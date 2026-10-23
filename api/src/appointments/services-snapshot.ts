@@ -10,8 +10,6 @@ export interface ServiceSnapshot {
   minutes: number
   /** Копейки */
   price: number
-  /** Расход материалов, копейки */
-  cost: number
 }
 
 /**
@@ -25,7 +23,7 @@ export function buildSnapshot(ids: readonly string[], priceList: readonly Servic
   for (const id of unique) {
     const s = byId.get(id)
     if (!s) return null
-    picked.push({ id: s.id, name: s.name, minutes: s.minutes, price: s.price, cost: s.cost })
+    picked.push({ id: s.id, name: s.name, minutes: s.minutes, price: s.price })
   }
   return picked
 }

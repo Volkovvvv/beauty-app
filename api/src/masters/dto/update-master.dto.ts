@@ -1,4 +1,4 @@
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
 import { SPECIALTY_IDS } from '../../specialties/specialties'
 
 export class UpdateMasterDto {
@@ -8,18 +8,25 @@ export class UpdateMasterDto {
   @MaxLength(100)
   displayName?: string
 
-  /** Чем занимается мастер — id из каталога. Новые добавляют свой стартовый прайс */
+  /** Где принимает. Пустая строка — убрать адрес */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200, { message: 'Адрес длиннее 200 символов' })
+  address?: string
+
+  /** Ник или ссылка на профиль; сервер оставит только ник. Пустая строка — убрать */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  instagram?: string
+
+  /** Чем занимается мастер — id из каталога. Услуги от этого не меняются */
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1, { message: 'Выберите хотя бы одно направление' })
+  @ArrayMinSize(1, { message: 'Выберите хотя бы одну сферу' })
   @ArrayMaxSize(SPECIALTY_IDS.length)
-  @IsIn(SPECIALTY_IDS, { each: true, message: 'Неизвестная специализация' })
+  @IsIn(SPECIALTY_IDS, { each: true, message: 'Неизвестная сфера' })
   specialties?: string[]
-
-  /** true — первый вход пройден. Сбросить обратно нельзя */
-  @IsOptional()
-  @IsBoolean()
-  onboarded?: boolean
 
   /** Начало рабочего дня, минуты от полуночи. */
   @IsOptional()

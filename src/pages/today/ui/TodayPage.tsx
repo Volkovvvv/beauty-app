@@ -80,7 +80,7 @@ export default function TodayPage({
             Привет, <i>{masterName}</i>
           </Title>
         </div>
-        <button type="button" className={s.profile} aria-label="Профиль и прайс" onClick={onOpenProfile}>
+        <button type="button" className={s.profile} aria-label="Профиль" onClick={onOpenProfile}>
           <Avatar text={initials(masterName, 1)} size="md" />
         </button>
       </header>

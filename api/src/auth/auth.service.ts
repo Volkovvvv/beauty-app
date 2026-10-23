@@ -84,8 +84,8 @@ export class AuthService {
         create: { tgId: BigInt(tg.id), ...profile },
       })
 
-      // Кабинет создаётся при первом входе пустым: стартовый прайс появится,
-      // когда мастер выберет специализации (MastersService.update)
+      // Кабинет создаётся при первом входе пустым: сферы и услуги мастер
+      // вносит при знакомстве (MastersService.onboard)
       const master = await tx.master.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } })
 
       return { user, master, zoneChanged: before !== null && before.timezone !== user.timezone }

@@ -1,16 +1,20 @@
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
 import { MAX_PRICE_KOPECKS } from '../../common/money'
+import { SPECIALTY_IDS } from '../../specialties/specialties'
+
+export const MIN_SERVICE_MINUTES = 5
+export const MAX_SERVICE_MINUTES = 600
 
 export class CreateServiceDto {
   @IsString()
   @MinLength(1, { message: 'Название не может быть пустым' })
-  @MaxLength(60)
+  @MaxLength(60, { message: 'Название длиннее 60 символов' })
   name!: string
 
   /** Длительность, минуты. Дольше 10 часов одна услуга не идёт. */
   @IsInt()
-  @Min(5)
-  @Max(600)
+  @Min(MIN_SERVICE_MINUTES, { message: 'Услуга короче 5 минут' })
+  @Max(MAX_SERVICE_MINUTES, { message: 'Услуга дольше 10 часов' })
   minutes!: number
 
   /** Цена, копейки. */
@@ -19,12 +23,14 @@ export class CreateServiceDto {
   @Max(MAX_PRICE_KOPECKS)
   price!: number
 
-  /** Расход материалов на услугу, копейки. */
+  /** Раздел — id специализации из каталога */
+  @IsIn(SPECIALTY_IDS, { message: 'Неизвестный раздел' })
+  category!: string
+
+  /** Показывать клиенткам в онлайн-записи. По умолчанию — да */
   @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(MAX_PRICE_KOPECKS)
-  cost?: number
+  @IsBoolean()
+  online?: boolean
 }
 
 // Поля те же, что при создании, но все необязательные
@@ -32,13 +38,13 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsString()
   @MinLength(1, { message: 'Название не может быть пустым' })
-  @MaxLength(60)
+  @MaxLength(60, { message: 'Название длиннее 60 символов' })
   name?: string
 
   @IsOptional()
   @IsInt()
-  @Min(5)
-  @Max(600)
+  @Min(MIN_SERVICE_MINUTES, { message: 'Услуга короче 5 минут' })
+  @Max(MAX_SERVICE_MINUTES, { message: 'Услуга дольше 10 часов' })
   minutes?: number
 
   @IsOptional()
@@ -48,10 +54,12 @@ export class UpdateServiceDto {
   price?: number
 
   @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(MAX_PRICE_KOPECKS)
-  cost?: number
+  @IsIn(SPECIALTY_IDS, { message: 'Неизвестный раздел' })
+  category?: string
+
+  @IsOptional()
+  @IsBoolean()
+  online?: boolean
 
   /** Место в прайсе. */
   @IsOptional()

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   appointmentTitle,
   dayAppointments,
@@ -13,9 +13,11 @@ import type { BookingInitial } from '../../../features/add-appointment'
 import { storyWindows, windowsLabel } from '../../../features/story-windows'
 import { WeekGrid } from '../../../widgets/week-grid'
 import { addDays, dayOfMonth, fromMinutes, rangeLabel, weekday, WEEKDAYS_FULL, weekStart, type ISODate } from '../../../shared/lib/date'
+import { cx } from '../../../shared/lib/cx'
 import { count, duration, rub } from '../../../shared/lib/format'
 import type { Now } from '../../../shared/lib/useNow'
 import { IconButton, Panel, Screen, SectionHeader, Stack, Title } from '../../../shared/ui'
+import MonthCalendar from './MonthCalendar'
 import s from './RecordsPage.module.css'
 
 interface RecordsPageProps {
@@ -35,6 +37,8 @@ interface RecordsPageProps {
 // «Записи»: неделя сеткой и список выбранного дня под ней
 export default function RecordsPage({ clientById, appointments, now, workday, date, onSelectDate, onOpenClient, onBook, onStories }: RecordsPageProps) {
   const start = weekStart(date)
+  // Месяц раскрывается под заголовком и закрывается выбором дня
+  const [monthOpen, setMonthOpen] = useState(false)
 
   // Зависит от начала недели, а не от выбранного дня: клик по дню внутри недели ничего не пересчитывает
   const week = useMemo(() => {
@@ -78,11 +82,27 @@ export default function RecordsPage({ clientById, appointments, now, workday, da
       </header>
 
       <div className={s.summary}>
-        <span className={s.week}>{rangeLabel(start, addDays(start, 6))}</span>
+        <button type="button" className={s.monthToggle} aria-expanded={monthOpen} onClick={() => setMonthOpen((v) => !v)}>
+          <span className={s.week}>{rangeLabel(start, addDays(start, 6))}</span>
+          <span className={cx(s.caret, monthOpen && s.caretOpen)} aria-hidden="true">▾</span>
+        </button>
         <span className={s.counts}>
           {count(week.booked, ['запись', 'записи', 'записей'])} · {count(week.windows, ['окно', 'окна', 'окон'])}
         </span>
       </div>
+
+      {monthOpen ? (
+        <MonthCalendar
+          appointments={appointments}
+          workday={workday}
+          now={now}
+          selected={date}
+          onPick={(d) => {
+            onSelectDate(d)
+            setMonthOpen(false)
+          }}
+        />
+      ) : null}
 
       {storyCount ? (
         <button type="button" className={s.stories} onClick={onStories}>

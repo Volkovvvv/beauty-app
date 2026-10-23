@@ -142,7 +142,7 @@ export default function MoneyPage({ appointments, clientById, now, onRemind, onO
 
       <div className={s.stats}>
         <StatTile label="Средний чек" value={rub(m.avgCheck)} />
-        <StatTile label="Материалы" value={`−${rub(m.materials)}`} />
+        <StatTile label="Записей" value={String(m.records)} />
       </div>
 
       {isDay ? (

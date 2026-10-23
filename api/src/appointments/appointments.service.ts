@@ -178,7 +178,7 @@ export class AppointmentsService {
   private async snapshot(masterId: string, ids: string[]): Promise<ServiceSnapshot[]> {
     const priceList = await this.prisma.service.findMany({
       where: { masterId, id: { in: ids }, archivedAt: null },
-      select: { id: true, name: true, minutes: true, price: true, cost: true },
+      select: { id: true, name: true, minutes: true, price: true },
     })
     const services = buildSnapshot(ids, priceList)
     // Чужая, убранная и несуществующая услуга — одинаковый ответ

@@ -1,6 +1,12 @@
 import type { Workday } from '../../appointment'
 
-/** Направление из каталога сервера: подписи и слова зависят от него */
+/** Подсказка при знакомстве: название в один тап, цену мастер вписывает сам */
+export interface ServiceSuggestion {
+  name: string
+  minutes: number
+}
+
+/** Сфера из каталога сервера: подписи, слова и подсказки услуг зависят от неё */
 export interface Specialty {
   id: string
   label: string
@@ -11,6 +17,7 @@ export interface Specialty {
   repeatWeeks: number
   /** Коротко, что входит: «коррекция, окрашивание, ламинирование» */
   summary: string
+  suggestions: readonly ServiceSuggestion[]
 }
 
 export interface Master {
@@ -18,6 +25,10 @@ export interface Master {
   telegramName: string
   /** Ник в Telegram без @, если есть */
   username: string | null
+  /** Где принимает */
+  address: string | null
+  /** Ник в Instagram без @ */
+  instagram: string | null
   workday: Workday
   specialties: string[]
   onboarded: boolean
