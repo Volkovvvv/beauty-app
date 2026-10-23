@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { dayAppointments, isWorkday, type Appointment, type Workday } from '../../../entities/appointment'
-import { monthStart, monthWindows } from '../../../features/story-windows'
+import { monthEnd, monthStart, monthWindows, type WindowEdits } from '../../../features/story-windows'
 import { cx } from '../../../shared/lib/cx'
 import { dayOfMonth, MONTHS, monthIndex, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
 import { count } from '../../../shared/lib/format'
@@ -12,18 +12,22 @@ interface MonthCalendarProps {
   appointments: readonly Appointment[]
   workday: Workday
   now: Now
+  /** Ручные правки окон: «есть окно» считается так же, как в сторис и онлайн-записи */
+  edits: WindowEdits
+  onLoadEdits: (from: ISODate, to: ISODate) => void
   selected: ISODate
   onPick: (date: ISODate) => void
 }
 
-// Загрузка месяца: где всё занято, где есть окно, где выходной. Окна —
-// по расписанию (часы без записей), ручные правки для сторис здесь не важны
-export default function MonthCalendar({ appointments, workday, now, selected, onPick }: MonthCalendarProps) {
+// Загрузка месяца: где всё занято, где есть окно, где выходной
+export default function MonthCalendar({ appointments, workday, now, edits, onLoadEdits, selected, onPick }: MonthCalendarProps) {
   const [month, setMonth] = useState(() => monthStart(selected))
   const days = useMemo(() => {
-    const windows = monthWindows({ appointments, workday, now, edits: {} }, month)
+    const windows = monthWindows({ appointments, workday, now, edits }, month)
     return windows.map((d) => ({ ...d, records: dayAppointments(appointments, d.date).length }))
-  }, [appointments, workday, now, month])
+  }, [appointments, workday, now, edits, month])
+
+  useEffect(() => onLoadEdits(month, monthEnd(month)), [month, onLoadEdits])
 
   const ahead = days.filter((d) => d.date >= now.date)
   const records = ahead.reduce((n, d) => n + d.records, 0)
@@ -34,11 +38,6 @@ export default function MonthCalendar({ appointments, workday, now, selected, on
       <div className={s.head}>
         <span className={s.month}>{MONTHS[monthIndex(month)]}</span>
         <div className={s.arrows}>
-          {selected !== now.date ? (
-            <button type="button" className={s.today} onClick={() => onPick(now.date)}>
-              Сегодня
-            </button>
-          ) : null}
           <IconButton label="Прошлый месяц" variant="white" onClick={() => setMonth((m) => monthStart(m, -1))}>‹</IconButton>
           <IconButton label="Следующий месяц" variant="white" onClick={() => setMonth((m) => monthStart(m, 1))}>›</IconButton>
         </div>

@@ -240,6 +240,8 @@ export default function App() {
           appointments={store.appointments}
           now={now}
           workday={workday}
+          edits={store.windowEdits}
+          onLoadEdits={store.loadWindowEdits}
           date={recordsDate}
           onSelectDate={setRecordsDate}
           onOpenClient={openClient}
@@ -253,6 +255,7 @@ export default function App() {
           appointments={store.appointments}
           workday={workday}
           now={now}
+          edits={store.windowEdits}
           name={storyName}
           username={store.master?.instagram ?? store.master?.username ?? null}
           onClose={closeStories}

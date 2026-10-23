@@ -28,21 +28,7 @@
   gap: 6px;
 }
 
-.arrows {
-  align-items: center;
-}
-
 .arrows > [aria-label] { background: var(--bg); }
-
-.today {
-  min-height: 40px;
-  padding: 0 6px;
-  border: none;
-  background: transparent;
-  color: var(--cherry);
-  font-size: 13px;
-  font-weight: 700;
-}
 
 .grid {
   display: grid;

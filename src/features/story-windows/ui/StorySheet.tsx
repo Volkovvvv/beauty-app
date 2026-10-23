@@ -6,6 +6,7 @@ import type { Now } from '../../../shared/lib/useNow'
 import { Segmented } from '../../../shared/ui'
 import { storyFontCSS } from '../model/fonts'
 import { blurredBackground } from '../model/image'
+import type { WindowEdits } from '../model/month'
 import { loadPrefs, savePrefs, TEMPLATES, type StoryTemplate } from '../model/prefs'
 import { publishStory, type ShareResult } from '../model/share'
 import { storyWindows, visibleDays, windowKey, windowsLabel, type StoryPeriod } from '../model/windows'
@@ -21,6 +22,8 @@ interface StorySheetProps {
   appointments: readonly Appointment[]
   workday: Workday
   now: Now
+  /** Ручные правки окон — те же, что в календаре месяца */
+  edits: WindowEdits
   /** «Вика · ногти» */
   name: string
   /** Ник из Telegram без @ — подпись по умолчанию */
@@ -34,7 +37,7 @@ interface StorySheetProps {
 
 // «Окошки в сторис»: свободные окна недели картинкой для сторис.
 // Шторка поверх «Записей» — вариант 4a макета. Месяц — отдельным экраном (5a)
-export default function StorySheet({ appointments, workday, now, name, username, onClose, onShared, onError, onOpenMonth }: StorySheetProps) {
+export default function StorySheet({ appointments, workday, now, edits, name, username, onClose, onShared, onError, onOpenMonth }: StorySheetProps) {
   const [prefs] = useState(loadPrefs)
   const [template, setTemplate] = useState<StoryTemplate>(prefs.template ?? 'photo')
   const [photo, setPhoto] = useState<string | null>(prefs.photo ?? null)
@@ -47,7 +50,7 @@ export default function StorySheet({ appointments, workday, now, name, username,
   const card = useRef<HTMLDivElement>(null)
   const file = useRef<HTMLInputElement>(null)
 
-  const windows = useMemo(() => storyWindows(appointments, workday, now), [appointments, workday, now])
+  const windows = useMemo(() => storyWindows({ appointments, workday, now, edits }), [appointments, workday, now, edits])
   const shown = useMemo(() => visibleDays(windows.days, off), [windows.days, off])
   const shownCount = shown.reduce((n, d) => n + d.times.length, 0)
 
