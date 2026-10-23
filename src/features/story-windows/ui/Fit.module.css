@@ -1,0 +1,13 @@
+/* Список окон: занимает всё свободное место, при нехватке уменьшается целиком */
+.fit {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fitInner {
+  flex: none;
+  transform-origin: center center;
+}

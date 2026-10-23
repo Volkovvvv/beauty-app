@@ -1,6 +1,7 @@
 export type { Appointment, AppointmentDraft, AppointmentStatus, TimelineItem, FreeWindow, Workday } from './model/appointment'
 export {
   DEFAULT_WORKDAY,
+  isWorkday,
   startOf,
   endOf,
   isActive,

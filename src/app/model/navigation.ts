@@ -1,4 +1,5 @@
 import type { BookingInitial } from '../../features/add-appointment'
+import type { ISODate } from '../../shared/lib/date'
 import type { TabItem } from '../../shared/ui'
 
 // prev — экран, с которого пришли: «назад» возвращает ровно туда
@@ -11,6 +12,9 @@ export type View = (
   | { name: 'book'; initial: BookingInitial }
   | { name: 'profile' }
   | { name: 'prices' }
+  // Окошки на месяц и серия сторис из них; month — первое число месяца
+  | { name: 'monthWindows'; month: ISODate }
+  | { name: 'monthStories'; month: ISODate }
   // then — вернуться в запись с новой клиенткой, если её добавляли из шторки выбора
   | { name: 'addClient'; then?: BookingInitial }
 ) & { prev?: View }

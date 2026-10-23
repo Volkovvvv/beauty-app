@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { servicesMinutes, servicesPrice, type Service } from '../../../entities/service'
-import type { Appointment, Workday } from '../../../entities/appointment'
+import { isWorkday, type Appointment, type Workday } from '../../../entities/appointment'
 import { clientHint, clientStats, initials, type Client } from '../../../entities/client'
-import { addDays, dayOfMonth, fromMinutes, MONTHS_SHORT, monthIndex, toMinutes, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
+import { dayOfMonth, fromMinutes, MONTHS_SHORT, monthIndex, toMinutes, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
 import { duration, plural, rub } from '../../../shared/lib/format'
 import { cx } from '../../../shared/lib/cx'
 import { useMaster } from '../../../entities/master'
@@ -41,11 +41,13 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
   const [selected, setSelected] = useState(() => new Set(initial.serviceIds ?? []))
   const [date, setDate] = useState(() => {
     if (initial.date && initial.date > now.date) return initial.date
-    // Сегодня свободного времени не осталось — сразу предлагаем завтра
+    // Сегодня свободного времени не осталось или выходной — предлагаем ближайший день со слотами
     const picked = new Set(initial.serviceIds ?? [])
     const minutes = servicesMinutes(services.filter((s) => picked.has(s.id)))
-    const today = daySlots({ appointments, date: now.date, minutes, now, workday })
-    return today.some((t) => !t.busy) ? now.date : addDays(now.date, 1)
+    const free = pickableDays(now.date, now.date).find((d) =>
+      daySlots({ appointments, date: d, minutes, now, workday }).some((t) => !t.busy)
+    )
+    return free ?? now.date
   })
   const [start, setStart] = useState<number | null>(initial.start ?? null)
   // Время введено руками, а не выбрано из сетки
@@ -201,7 +203,9 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
         <Stack gap={10}>
           <div className={s.labelRow}>
             <span className={s.label}>Когда</span>
-            <span className={s.hint}>Слоты под {minutes ? duration(minutes) : '—'}</span>
+            <span className={s.hint}>
+              {isWorkday(workday, date) ? `Слоты под ${minutes ? duration(minutes) : '—'}` : 'Выходной — время можно ввести своё'}
+            </span>
           </div>
           <div className={s.days}>
             {days.map((d) => (

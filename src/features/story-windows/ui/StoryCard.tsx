@@ -1,8 +1,9 @@
-import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { forwardRef } from 'react'
 import { cx } from '../../../shared/lib/cx'
 import { fromMinutes } from '../../../shared/lib/date'
 import type { StoryTemplate } from '../model/prefs'
 import type { StoryDay } from '../model/windows'
+import Fit from './Fit'
 import s from './StoryCard.module.css'
 
 interface StoryCardProps {
@@ -14,8 +15,6 @@ interface StoryCardProps {
   name: string
   /** «@vika.nails»; пусто — без подписи */
   handle: string
-  /** Месяц: окон много, сетка плотнее */
-  compact: boolean
   /** Размытое фото для шаблона «Фото» (data URL) */
   photo: string | null
   /** Сколько окон не поместилось в кадр */
@@ -29,13 +28,13 @@ const DEFAULT_PHOTO =
 // Сторис 360×640 по шаблонам «Окошки в сторис». Верстка в точках макета:
 // превью уменьшает её трансформом, картинка снимается с этого же узла ×3.
 const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
-  { template, days, range, name, handle, compact, photo, onHidden },
+  { template, days, range, name, handle, photo, onHidden },
   ref
 ) {
-  const root = cx(s.card, s[template], compact && s.compact)
+  const root = cx(s.card, s[template])
 
   const rows = days.map((d, i) => (
-    <div key={d.date} className={cx(s.day, i >= (compact ? 2 : 1) && s.dayBorder)}>
+    <div key={d.date} className={cx(s.day, i >= 1 && s.dayBorder)}>
       <span className={s.dayLabel}>{d.label}</span>
       <div className={s.times}>
         {d.times.map((t) => (
@@ -45,7 +44,7 @@ const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
     </div>
   ))
   // Новый набор окон или вёрстка — подбор размера заново, с чистого листа
-  const fitKey = `${template}|${compact}|${days.map((d) => d.date + d.times.join()).join('|')}`
+  const fitKey = `${template}|${days.map((d) => d.date + d.times.join()).join('|')}`
   const list = (
     <Fit
       key={fitKey}
@@ -86,7 +85,7 @@ const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
         <div className={s.title}>
           Окошки
           <br />
-          <i className={s.accent}>{compact ? 'на месяц' : 'на неделю'}</i>
+          <i className={s.accent}>на неделю</i>
         </div>
         {list}
         <div className={s.nightFooter}>
@@ -132,54 +131,3 @@ const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
 })
 
 export default StoryCard
-
-// Мельче этого время в сторис уже не прочитать
-const MIN_SCALE = 0.75
-
-interface FitProps {
-  rows: ReactNode[]
-  wrap: (rows: ReactNode[]) => ReactNode
-  /** Сколько строк поместилось; остальные в кадр не попали */
-  onHidden: (shown: number) => void
-}
-
-// Окон за месяц бывает больше, чем влезает в кадр. Сначала список
-// чуть уменьшается целиком, а если и так не влез — последние дни
-// не показываются, и шторка говорит мастеру, сколько окон не поместилось.
-function Fit({ rows, wrap, onHidden }: FitProps) {
-  const box = useRef<HTMLDivElement>(null)
-  const inner = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
-  const [limit, setLimit] = useState(rows.length)
-
-  useLayoutEffect(() => {
-    if (!box.current || !inner.current) return
-    // offset* — размеры вёрстки: трансформы, и наш, и превью, на них не влияют.
-    // Уменьшаем от центра, высота вёрстки от масштаба не зависит — пересчёт не качается
-    const free = box.current.offsetHeight
-    const need = inner.current.offsetHeight
-    if (!free || !need) return
-    const fit = Math.min(1, free / need)
-    if (fit >= MIN_SCALE || limit <= 1) {
-      if (Math.abs(fit - scale) > 0.01) setScale(Math.max(MIN_SCALE, fit))
-      return
-    }
-    // Строки примерно одной высоты: прыгаем сразу к оценке, дальше по одной
-    const estimate = Math.floor((limit * free) / (need * MIN_SCALE))
-    setLimit(Math.max(1, Math.min(limit - 1, estimate)))
-  })
-
-  // Колбэк через ref: родитель передаёт новую функцию на каждый рендер
-  const report = useRef(onHidden)
-  report.current = onHidden
-  useEffect(() => report.current(limit), [limit])
-
-  const style: CSSProperties | undefined = scale < 1 ? { transform: `scale(${scale})` } : undefined
-  return (
-    <div ref={box} className={s.fit}>
-      <div ref={inner} className={s.fitInner} style={style}>
-        {wrap(rows.slice(0, limit))}
-      </div>
-    </div>
-  )
-}

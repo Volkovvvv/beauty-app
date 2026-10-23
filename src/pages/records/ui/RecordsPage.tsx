@@ -56,7 +56,7 @@ export default function RecordsPage({ clientById, appointments, now, workday, da
 
   // Окна на семь дней вперёд с сегодня — те, что попадут в сторис
   const storyCount = useMemo(
-    () => storyWindows(appointments, workday, now, 'week').days.reduce((n, d) => n + d.times.length, 0),
+    () => storyWindows(appointments, workday, now).days.reduce((n, d) => n + d.times.length, 0),
     [appointments, workday, now]
   )
 

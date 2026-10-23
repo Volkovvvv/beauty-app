@@ -1,4 +1,4 @@
-import { toMinutes, type ISODate, type Time } from '../../../shared/lib/date'
+import { toMinutes, weekday, type ISODate, type Time } from '../../../shared/lib/date'
 import type { Now } from '../../../shared/lib/useNow'
 import { servicesTitle, type Service } from '../../service'
 
@@ -48,9 +48,14 @@ export interface AppointmentDraft {
 export interface Workday {
   start: number
   end: number
+  /** Рабочие дни недели, 0 — понедельник */
+  days: readonly number[]
 }
 
-export const DEFAULT_WORKDAY: Workday = { start: 10 * 60, end: 21 * 60 }
+export const DEFAULT_WORKDAY: Workday = { start: 10 * 60, end: 21 * 60, days: [0, 1, 2, 3, 4, 5] }
+
+/** Работает ли мастер в этот день по графику */
+export const isWorkday = (workday: Workday, date: ISODate): boolean => workday.days.includes(weekday(date))
 
 export type TimelineItem =
   | { kind: 'appointment'; start: number; appointment: Appointment }

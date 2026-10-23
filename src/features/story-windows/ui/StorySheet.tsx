@@ -6,7 +6,7 @@ import type { Now } from '../../../shared/lib/useNow'
 import { Segmented } from '../../../shared/ui'
 import { storyFontCSS } from '../model/fonts'
 import { blurredBackground } from '../model/image'
-import { loadPrefs, savePrefs, type StoryTemplate } from '../model/prefs'
+import { loadPrefs, savePrefs, TEMPLATES, type StoryTemplate } from '../model/prefs'
 import { publishStory, type ShareResult } from '../model/share'
 import { storyWindows, visibleDays, windowKey, windowsLabel, type StoryPeriod } from '../model/windows'
 import StoryCard from './StoryCard'
@@ -15,13 +15,6 @@ import s from './StorySheet.module.css'
 const PERIODS: readonly { value: StoryPeriod; label: string }[] = [
   { value: 'week', label: 'Неделя' },
   { value: 'month', label: 'Месяц' },
-]
-
-const TEMPLATES: readonly { id: StoryTemplate; name: string; swatch: string }[] = [
-  { id: 'photo', name: 'Фото', swatch: 'linear-gradient(135deg, #f1c9d1, #7a1630)' },
-  { id: 'cherry', name: 'Вишня', swatch: '#7a1630' },
-  { id: 'cream', name: 'Крем', swatch: '#f6eeea' },
-  { id: 'night', name: 'Ночь', swatch: '#2a1a1f' },
 ]
 
 interface StorySheetProps {
@@ -35,13 +28,14 @@ interface StorySheetProps {
   onClose: () => void
   onShared: (result: ShareResult) => void
   onError: (message: string) => void
+  /** «Месяц» — окна на месяц с правкой и серия сторис по неделям */
+  onOpenMonth: () => void
 }
 
-// «Окошки в сторис»: свободные окна недели или месяца картинкой для сторис.
-// Шторка поверх «Записей» — вариант 4a макета
-export default function StorySheet({ appointments, workday, now, name, username, onClose, onShared, onError }: StorySheetProps) {
+// «Окошки в сторис»: свободные окна недели картинкой для сторис.
+// Шторка поверх «Записей» — вариант 4a макета. Месяц — отдельным экраном (5a)
+export default function StorySheet({ appointments, workday, now, name, username, onClose, onShared, onError, onOpenMonth }: StorySheetProps) {
   const [prefs] = useState(loadPrefs)
-  const [period, setPeriod] = useState<StoryPeriod>('week')
   const [template, setTemplate] = useState<StoryTemplate>(prefs.template ?? 'photo')
   const [photo, setPhoto] = useState<string | null>(prefs.photo ?? null)
   const [handle, setHandle] = useState(prefs.handle ?? (username ? `@${username}` : ''))
@@ -53,7 +47,7 @@ export default function StorySheet({ appointments, workday, now, name, username,
   const card = useRef<HTMLDivElement>(null)
   const file = useRef<HTMLInputElement>(null)
 
-  const windows = useMemo(() => storyWindows(appointments, workday, now, period), [appointments, workday, now, period])
+  const windows = useMemo(() => storyWindows(appointments, workday, now), [appointments, workday, now])
   const shown = useMemo(() => visibleDays(windows.days, off), [windows.days, off])
   const shownCount = shown.reduce((n, d) => n + d.times.length, 0)
 
@@ -126,7 +120,14 @@ export default function StorySheet({ appointments, workday, now, name, username,
             </button>
           </div>
 
-          <Segmented label="Период" options={PERIODS} value={period} onChange={setPeriod} />
+          <Segmented
+            label="Период"
+            options={PERIODS}
+            value="week"
+            onChange={(p: StoryPeriod) => {
+              if (p === 'month') onOpenMonth()
+            }}
+          />
 
           <div className={s.editor}>
             <div className={s.preview}>
@@ -138,7 +139,6 @@ export default function StorySheet({ appointments, workday, now, name, username,
                   range={windows.range}
                   name={name}
                   handle={handle.trim()}
-                  compact={period === 'month'}
                   photo={photo}
                   onHidden={setHidden}
                 />
@@ -180,7 +180,7 @@ export default function StorySheet({ appointments, workday, now, name, username,
 
           {hidden ? (
             <span className={s.warn}>
-              Не поместилось {windowsLabel(hidden)} — уберите лишние ниже{period === 'month' ? ' или выберите неделю' : ''}
+              Не поместилось {windowsLabel(hidden)} — уберите лишние ниже
             </span>
           ) : null}
 

@@ -1,16 +1,30 @@
 import { mainService, servicesCost } from '../../../entities/service'
-import { debtOf, isActive, type Appointment } from '../../../entities/appointment'
+import { appointmentTitle, byStart, debtOf, isActive, type Appointment } from '../../../entities/appointment'
 import type { Client } from '../../../entities/client'
-import { addDays, dayMonth, dayOfMonth, fromISO, MONTHS, rangeLabel, toISO, weekday, WEEKDAYS, weekStart, type ISODate } from '../../../shared/lib/date'
-import { plural } from '../../../shared/lib/format'
+import {
+  addDays,
+  dayMonth,
+  dayOfMonth,
+  fromISO,
+  MONTHS,
+  rangeLabel,
+  toISO,
+  weekday,
+  WEEKDAYS,
+  WEEKDAYS_FULL,
+  weekStart,
+  type ISODate,
+} from '../../../shared/lib/date'
+import { count, plural } from '../../../shared/lib/format'
 
-export type Period = 'week' | 'month'
+export type Period = 'day' | 'week' | 'month'
 
 export interface MoneySummary {
   caption: string
   total: number
   delta: { value: number; label: string } | null
-  bars: { label: string; value: number; highlight: boolean }[]
+  /** Столбики недели или месяца; у недели date — день столбика */
+  bars: { label: string; value: number; highlight: boolean; date?: ISODate }[]
   avgCheck: number
   materials: number
   services: { name: string; value: number }[]
@@ -59,18 +73,29 @@ const inRange = (list: readonly Appointment[], { from, to }: Range) =>
 
 const sum = (list: readonly Appointment[]) => list.reduce((total, a) => total + a.price, 0)
 
-/** Тот же день, но в соседнем периоде: листание недель и месяцев */
+/** Тот же день, но в соседнем периоде: листание дней, недель и месяцев */
 export function shiftPeriod(period: Period, anchor: ISODate, step: number): ISODate {
+  if (period === 'day') return addDays(anchor, step)
   return period === 'week' ? addDays(anchor, step * 7) : monthBounds(anchor, step).from
 }
 
 function periodFrame(period: Period, anchor: ISODate, today: ISODate) {
+  if (period === 'day') {
+    return {
+      range: { from: anchor, to: anchor },
+      prev: { from: addDays(anchor, -1), to: addDays(anchor, -1) },
+      bars: [],
+      highlight: -1,
+      caption: `${WEEKDAYS_FULL[weekday(anchor)]}, ${dayMonth(anchor)}${anchor === today ? ' · сегодня' : ''}`,
+      deltaTo: '',
+    }
+  }
   if (period === 'week') {
     const from = weekStart(anchor)
     return {
       range: { from, to: addDays(from, 6) },
       prev: { from: addDays(from, -7), to: addDays(from, -1) },
-      bars: WEEKDAYS.map((label, i) => ({ label: String(label), from: addDays(from, i), to: addDays(from, i) })),
+      bars: WEEKDAYS.map((label, i) => ({ label: String(label), from: addDays(from, i), to: addDays(from, i), date: addDays(from, i) })),
       highlight: weekStart(today) === from ? weekday(today) : -1,
       caption: rangeLabel(from, addDays(from, 6)),
       deltaTo: 'к прошлой неделе',
@@ -81,7 +106,7 @@ function periodFrame(period: Period, anchor: ISODate, today: ISODate) {
   const thisYear = fromISO(today).getFullYear()
   const year = fromISO(cur.from).getFullYear()
   const days = dayOfMonth(cur.to)
-  const bars: (Range & { label: string })[] = []
+  const bars: (Range & { label: string; date?: ISODate })[] = []
   for (let start = 1, n = 1; start <= days; start += 7, n += 1) {
     bars.push({ label: `${n} нед`, from: addDays(cur.from, start - 1), to: addDays(cur.from, Math.min(start + 6, days) - 1) })
   }
@@ -95,14 +120,14 @@ function periodFrame(period: Period, anchor: ISODate, today: ISODate) {
   }
 }
 
-// Сводка за неделю или месяц, в который попадает anchor.
+// Сводка за день, неделю или месяц, в который попадает anchor.
 // Считаются все неотменённые записи периода, в том числе ещё предстоящие
 export function moneySummary(appointments: readonly Appointment[], period: Period, anchor: ISODate, today: ISODate): MoneySummary {
   const frame = periodFrame(period, anchor, today)
   const list = inRange(appointments, frame.range)
   const total = sum(list)
   const before = sum(inRange(appointments, frame.prev))
-  const delta = before ? Math.round(((total - before) / before) * 100) : null
+  const delta = period === 'day' ? dayDelta(appointments, anchor, list.length, total) : percentDelta(total, before, frame.deltaTo)
 
   // Выручка и материалы за один проход; выручка — по главной услуге записи
   const byService = new Map<string, number>()
@@ -130,8 +155,8 @@ export function moneySummary(appointments: readonly Appointment[], period: Perio
   return {
     caption: frame.caption,
     total,
-    delta: delta === null ? null : { value: delta, label: `${delta >= 0 ? '+' : '−'}${Math.abs(delta)}% ${frame.deltaTo}` },
-    bars: frame.bars.map((b, i) => ({ label: b.label, value: sum(inRange(list, b)), highlight: i === frame.highlight })),
+    delta,
+    bars: frame.bars.map((b, i) => ({ label: b.label, value: sum(inRange(list, b)), highlight: i === frame.highlight, date: b.date })),
     avgCheck: list.length ? total / list.length : 0,
     materials,
     services,
@@ -145,6 +170,58 @@ export function moneySummary(appointments: readonly Appointment[], period: Perio
       })),
     current: today >= frame.range.from && today <= frame.range.to,
   }
+}
+
+function percentDelta(total: number, before: number, to: string): MoneySummary['delta'] {
+  if (!before) return null
+  const value = Math.round(((total - before) / before) * 100)
+  return { value, label: `${value >= 0 ? '+' : '−'}${Math.abs(value)}% ${to}` }
+}
+
+// День сравниваем не со вчера, а со средним рабочим днём месяца:
+// у мастера с выходными «вчера» часто пустое
+function dayDelta(appointments: readonly Appointment[], date: ISODate, records: number, total: number): MoneySummary['delta'] {
+  if (!records) return { value: 0, label: 'Записей не было' }
+  const totals = new Map<ISODate, number>()
+  for (const a of inRange(appointments, monthBounds(date))) {
+    if (a.date !== date) totals.set(a.date, (totals.get(a.date) ?? 0) + a.price)
+  }
+  const recordsLabel = count(records, ['запись', 'записи', 'записей'])
+  if (!totals.size) return { value: 0, label: recordsLabel }
+  const avg = [...totals.values()].reduce((a, b) => a + b, 0) / totals.size
+  return { value: total - avg, label: `${recordsLabel} · ${total >= avg ? 'выше' : 'ниже'} среднего дня` }
+}
+
+/** Записи дня для «Денег»: время, клиентка, услуги и сумма */
+export interface DayRecord {
+  id: string
+  start: string
+  client: string
+  title: string
+  price: number
+}
+
+export function dayRecords(appointments: readonly Appointment[], date: ISODate, clientById: Map<string, Client>): DayRecord[] {
+  return appointments
+    .filter((a) => a.date === date && isActive(a))
+    .sort(byStart)
+    .map((a) => ({
+      id: a.id,
+      start: a.start,
+      client: clientById.get(a.clientId)?.name ?? 'Клиентка',
+      title: appointmentTitle(a),
+      price: a.price,
+    }))
+}
+
+/** Выручка по дням месяца — лента дней в режиме «День» */
+export function monthDayTotals(appointments: readonly Appointment[], anchor: ISODate): { date: ISODate; total: number }[] {
+  const { from, to } = monthBounds(anchor)
+  const totals = new Map<ISODate, number>()
+  for (const a of inRange(appointments, { from, to })) totals.set(a.date, (totals.get(a.date) ?? 0) + a.price)
+  const out: { date: ISODate; total: number }[] = []
+  for (let d = from; d <= to; d = addDays(d, 1)) out.push({ date: d, total: totals.get(d) ?? 0 })
+  return out
 }
 
 /** Кто не доплатил: по одной строке на запись с остатком */

@@ -1,13 +1,14 @@
-import { dayAppointments, endOf, startOf, type Appointment, type Workday } from '../../../entities/appointment'
-import { addDays, dayOfMonth, MONTHS_SHORT, monthIndex, rangeLabel, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
+import { dayAppointments, endOf, isWorkday, startOf, type Appointment, type Workday } from '../../../entities/appointment'
+import { addDays, dayOfMonth, rangeLabel, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
 import { count } from '../../../shared/lib/format'
 import type { Now } from '../../../shared/lib/useNow'
 
+/** Неделя — одна сторис из шторки, месяц — серия по неделям (экран окон месяца) */
 export type StoryPeriod = 'week' | 'month'
 
 export interface StoryDay {
   date: ISODate
-  /** «Чт 22» за неделю, «22 окт» за месяц */
+  /** «Чт 22» */
   label: string
   /** Начала свободных окон, минуты от полуночи */
   times: number[]
@@ -19,7 +20,7 @@ export interface StoryWindows {
   days: StoryDay[]
 }
 
-const LENGTH: Record<StoryPeriod, number> = { week: 7, month: 30 }
+const WEEK = 7
 
 // Окно короче часа клиентке не предложишь — как и в ленте дня
 const MIN_WINDOW = 60
@@ -45,21 +46,14 @@ function dayWindows(list: readonly Appointment[], workday: Workday, from: number
 // Сегодняшние окна начинаются не раньше ближайшего получаса
 const roundUp = (minutes: number) => Math.ceil(minutes / 30) * 30
 
-/** Свободные окна на неделю или месяц вперёд, начиная с сегодня */
-export function storyWindows(
-  appointments: readonly Appointment[],
-  workday: Workday,
-  now: Now,
-  period: StoryPeriod
-): StoryWindows {
-  const dates = Array.from({ length: LENGTH[period] }, (_, i) => addDays(now.date, i))
+/** Свободные окна на неделю вперёд, начиная с сегодня; выходные по графику пропускаются */
+export function storyWindows(appointments: readonly Appointment[], workday: Workday, now: Now): StoryWindows {
+  const dates = Array.from({ length: WEEK }, (_, i) => addDays(now.date, i))
   const days = dates
+    .filter((date) => isWorkday(workday, date))
     .map((date) => ({
       date,
-      label:
-        period === 'week'
-          ? `${WEEKDAYS[weekday(date)]} ${dayOfMonth(date)}`
-          : `${dayOfMonth(date)} ${MONTHS_SHORT[monthIndex(date)]}`,
+      label: `${WEEKDAYS[weekday(date)]} ${dayOfMonth(date)}`,
       times: dayWindows(dayAppointments(appointments, date), workday, date === now.date ? roundUp(now.minutes) : 0),
     }))
     .filter((d) => d.times.length)

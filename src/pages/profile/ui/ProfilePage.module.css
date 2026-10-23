@@ -52,3 +52,25 @@
   font-weight: 600;
   color: var(--danger);
 }
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dayChip {
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.dayOn {
+  background: var(--ink);
+  color: var(--on-ink);
+}

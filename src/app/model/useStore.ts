@@ -3,6 +3,8 @@ import { servicesPrice, type Service } from '../../entities/service'
 import type { Appointment, AppointmentDraft, AppointmentStatus } from '../../entities/appointment'
 import type { Client } from '../../entities/client'
 import type { Master, Specialty } from '../../entities/master'
+import type { WindowEdit, WindowEdits } from '../../features/story-windows'
+import type { ISODate } from '../../shared/lib/date'
 import { api, getAll, login } from '../../shared/api/client'
 import { haptic } from '../../shared/api/telegram'
 import { newId } from '../../shared/lib/id'
@@ -24,13 +26,15 @@ import {
   type ApiMaster,
   type ApiService,
   type ApiSpecialty,
+  type ApiWindowEdit,
   type ClientInput,
 } from './mappers'
 
-/** Правка профиля: имя, направления, отметка «первый вход пройден» */
+/** Правка профиля: имя, направления, рабочие дни, отметка «первый вход пройден» */
 export interface MasterPatch {
   displayName?: string
   specialties?: string[]
+  workDays?: number[]
   onboarded?: boolean
 }
 
@@ -54,6 +58,11 @@ export interface Store {
   updateService: (id: string, service: Omit<Service, 'id'>) => void
   removeService: (id: string) => void
   addClient: (input: ClientInput) => Promise<Client>
+  /** Ручные правки окон для сторис на месяц, по дням */
+  windowEdits: WindowEdits
+  loadWindowEdits: (from: ISODate, to: ISODate) => void
+  /** null — день возвращается к расчёту по расписанию */
+  saveWindowEdits: (changes: Readonly<Record<ISODate, WindowEdit | null>>) => void
 }
 
 /**
@@ -97,6 +106,9 @@ export function useStore(): Store {
   const [services, setServices] = useState<Service[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [windowEdits, setWindowEdits] = useState<WindowEdits>({})
+  const windowEditsRef = useRef(windowEdits)
+  windowEditsRef.current = windowEdits
   // Актуальный список для обработчиков: им нужно состояние до правки,
   // а зависеть от списка значило бы пересоздавать их на каждое изменение
   const appointmentsRef = useRef(appointments)
@@ -317,6 +329,45 @@ export function useStore(): Store {
     return saved
   }, [])
 
+  // Правки окон нужны только экрану месяца — грузятся, когда он открыт
+  const loadWindowEdits = useCallback((from: ISODate, to: ISODate) => {
+    api
+      .get<ApiWindowEdit[]>(`/windows?from=${from}&to=${to}`)
+      .then((list) =>
+        setWindowEdits((prev) => {
+          const next: Record<ISODate, WindowEdit> = {}
+          for (const [date, edit] of Object.entries(prev)) if (date < from || date > to) next[date] = edit
+          for (const e of list) next[e.date] = { add: e.add, rem: e.rem }
+          return next
+        })
+      )
+      .catch((e: unknown) => reportError(errorText(e)))
+  }, [])
+
+  const saveWindowEdits = useCallback((changes: Readonly<Record<ISODate, WindowEdit | null>>) => {
+    const dates = Object.keys(changes)
+    if (!dates.length) return
+    const before = windowEditsRef.current
+    const apply = (source: Readonly<Record<ISODate, WindowEdit | null | undefined>>) =>
+      setWindowEdits((prev) => {
+        const next = { ...prev }
+        for (const date of dates) {
+          const edit = source[date]
+          if (edit) next[date] = edit
+          else delete next[date]
+        }
+        return next
+      })
+    apply(changes)
+    api
+      .put('/windows', { days: dates.map((date) => ({ date, add: changes[date]?.add ?? [], rem: changes[date]?.rem ?? [] })) })
+      .catch((e: unknown) => {
+        // Откатываем только эти дни: правки других дней за это время не трогаем
+        apply(before)
+        reportError(errorText(e))
+      })
+  }, [])
+
   return {
     ready,
     authError,
@@ -336,5 +387,8 @@ export function useStore(): Store {
     updateService,
     removeService,
     addClient,
+    windowEdits,
+    loadWindowEdits,
+    saveWindowEdits,
   }
 }

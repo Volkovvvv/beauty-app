@@ -1,0 +1,387 @@
+/* Окошки на месяц — макет 5a */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.screen > * { flex: none; }
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.titleBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.sub {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.monthRow {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 2px 4px 6px;
+}
+
+.monthName {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.arrows {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+/* ─── Итог расписания ─── */
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 8px 12px 14px;
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.summaryText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summaryTitle {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.summarySub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.resetAll {
+  flex: none;
+  min-height: 36px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--cherry);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* ─── Календарь ─── */
+
+.calendar {
+  padding: 12px 10px 10px;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--faint);
+}
+
+.cell {
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--faint);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.cellOpen {
+  background: var(--card);
+  color: var(--ink);
+}
+
+.cellOn {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.cellPast { opacity: 0.45; }
+
+.cellNum {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cellCount {
+  height: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--cherry);
+}
+
+.cellOn .cellCount { color: var(--on-cherry-muted); }
+
+.editDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.cellOn .editDot { background: var(--on-cherry-muted); }
+
+/* ─── Часы выбранного дня ─── */
+
+.dayHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dayTitle {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dayCount {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hours {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.hour {
+  position: relative;
+  min-height: 40px;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  box-sizing: border-box;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.hourMark {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--on-cherry-muted);
+}
+
+/* Состояния часа — те же классы красят и легенду */
+.auto {
+  background: var(--cherry);
+  border-color: var(--cherry);
+  color: var(--on-cherry);
+}
+
+.added {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-ink);
+}
+
+.removed {
+  background: transparent;
+  border: 1.5px dashed var(--cherry);
+  color: var(--cherry);
+  text-decoration: line-through;
+}
+
+.free {
+  background: var(--card);
+  color: var(--ink);
+}
+
+.booked {
+  background: #ecdfe2;
+  color: #b9a3a8;
+}
+
+.past {
+  background: #ecdfe2;
+  color: #b9a3a8;
+  opacity: 0.5;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* ─── Действия над днём ─── */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.copy,
+.soft,
+.softInk {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.copy {
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.soft,
+.softInk {
+  border: none;
+  background: var(--glass-strong);
+  color: var(--cherry);
+}
+
+.softInk { color: var(--ink); }
+
+/* ─── Панель внизу: превью серии и «Создать» ─── */
+
+.bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + var(--safe-bottom));
+  z-index: 20;
+  transform: translateX(-50%);
+  width: min(532px, calc(100% - 28px));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 24px;
+  background: var(--ink);
+  box-shadow: var(--shadow-dark);
+}
+
+.thumb {
+  flex: none;
+  width: 45px;
+  height: 80px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.thumbScale {
+  display: block;
+  width: 360px;
+  height: 640px;
+  transform: scale(0.125);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.barText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.barTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--on-ink);
+}
+
+.barSub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-ink-muted);
+}
+
+.create {
+  flex: none;
+  min-height: 48px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--on-cherry-muted);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.create:disabled { opacity: 0.5; }

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMaster, type Specialty } from '../../../entities/master'
 import { SpecialtyPicker } from '../../../features/onboarding'
-import { fromMinutes } from '../../../shared/lib/date'
+import { cx } from '../../../shared/lib/cx'
+import { fromMinutes, WEEKDAYS } from '../../../shared/lib/date'
 import { count } from '../../../shared/lib/format'
 import { Avatar, BottomBar, Button, IconButton, Panel, Screen, Stack, TextField, Title } from '../../../shared/ui'
 import { initials } from '../../../entities/client'
@@ -10,30 +11,35 @@ import s from './ProfilePage.module.css'
 interface ProfilePageProps {
   catalog: readonly Specialty[]
   servicesCount: number
-  onSave: (patch: { displayName: string; specialties: string[] }) => Promise<void>
+  onSave: (patch: { displayName: string; specialties: string[]; workDays: number[] }) => Promise<void>
   onOpenPrices: () => void
   onBack: () => void
 }
 
-const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i])
+const same = <T,>(a: readonly T[], b: readonly T[]) => a.length === b.length && a.every((x, i) => x === b[i])
 
-// Профиль мастера: имя для клиенток, направления и прайс
+// Профиль мастера: имя для клиенток, направления, рабочие дни и прайс
 export default function ProfilePage({ catalog, servicesCount, onSave, onOpenPrices, onBack }: ProfilePageProps) {
   const { master } = useMaster()
   const [name, setName] = useState(master.name)
   const [picked, setPicked] = useState(master.specialties)
+  const [workDays, setWorkDays] = useState<readonly number[]>(master.workday.days)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const changed = name.trim() !== master.name || !same(picked, master.specialties)
+  const changed =
+    name.trim() !== master.name || !same(picked, master.specialties) || !same(workDays, master.workday.days)
   const ready = changed && name.trim().length > 0 && picked.length > 0 && !saving
   const added = picked.filter((id) => !master.specialties.includes(id))
+
+  const toggleDay = (day: number) =>
+    setWorkDays((list) => (list.includes(day) ? list.filter((d) => d !== day) : [...list, day].sort((a, b) => a - b)))
 
   const save = () => {
     if (!ready) return
     setSaving(true)
     setError('')
-    onSave({ displayName: name.trim(), specialties: picked })
+    onSave({ displayName: name.trim(), specialties: picked, workDays: [...workDays] })
       .catch((e: Error) => setError(e.message))
       .finally(() => setSaving(false))
   }
@@ -62,6 +68,28 @@ export default function ProfilePage({ catalog, servicesCount, onSave, onOpenPric
             {added.length
               ? 'Новое направление добавит в прайс свои услуги — их можно поправить или убрать'
               : 'Первое выбранное — основное: от него обычный интервал между визитами новых клиенток'}
+          </span>
+        </Stack>
+
+        <Stack gap={10}>
+          <span className={s.label}>Рабочие дни</span>
+          <div className={s.days}>
+            {WEEKDAYS.map((label, day) => (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={workDays.includes(day)}
+                className={cx(s.dayChip, workDays.includes(day) && s.dayOn)}
+                onClick={() => toggleDay(day)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className={s.sub}>
+            {workDays.length
+              ? 'В выходные нет слотов записи и окошек для сторис — записать клиентку можно на своё время'
+              : 'Ни одного рабочего дня — окошки для сторис можно добавить только вручную'}
           </span>
         </Stack>
 

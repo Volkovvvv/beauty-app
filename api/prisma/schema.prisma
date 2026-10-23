@@ -61,6 +61,9 @@ model Master {
   // и считает свободные окна. 600 = 10:00, 1260 = 21:00.
   dayStart Int @default(600)
   dayEnd   Int @default(1260)
+  // Рабочие дни недели: 0 — понедельник … 6 — воскресенье. В остальные
+  // дни окон по расписанию нет — мастер добавляет их вручную.
+  workDays Int[] @default([0, 1, 2, 3, 4, 5])
 
   // Напоминания клиенткам: «за день и за 2 часа». 0 — выключено.
   notifyBeforeHours   Int @default(24)
@@ -77,6 +80,7 @@ model Master {
   clients      Client[]
   appointments Appointment[]
   photos       ClientPhoto[]
+  windowEdits  WindowEdit[]
 
   @@map("masters")
 }
@@ -222,6 +226,30 @@ model Appointment {
   // История клиентки.
   @@index([clientId, startsAt])
   @@map("appointments")
+}
+
+// ─── Окна для сторис ─────────────────────────────────────────────────────
+
+// Ручная правка свободных окон одного дня. Сами окна не хранятся: их
+// каждый раз считает приложение из рабочих часов и записей. Здесь только
+// отличие мастера от расчёта — какие часы убрать и какие добавить сверх него.
+// Новая запись на добавленный час окно всё равно закрывает.
+model WindowEdit {
+  id       String @id @default(uuid())
+  masterId String
+  master   Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  // Местная дата мастера 'YYYY-MM-DD': окна — про календарный день,
+  // а не про момент времени, и не должны съезжать со сменой таймзоны.
+  date String
+  // Начала часовых окон, минуты от полуночи.
+  add  Int[]
+  rem  Int[]
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([masterId, date])
+  @@map("window_edits")
 }
 
 // ─── Напоминания ─────────────────────────────────────────────────────────

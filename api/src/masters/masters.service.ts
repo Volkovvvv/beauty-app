@@ -11,6 +11,7 @@ const MASTER_SELECT = {
   onboardedAt: true,
   dayStart: true,
   dayEnd: true,
+  workDays: true,
   notifyBeforeHours: true,
   notifyBeforeMinutes: true,
   user: { select: { firstName: true, lastName: true, username: true, timezone: true } },
@@ -31,6 +32,8 @@ export interface MasterView {
   timezone: string
   dayStart: number
   dayEnd: number
+  /** Рабочие дни недели, 0 — понедельник */
+  workDays: number[]
   notifyBeforeHours: number
   notifyBeforeMinutes: number
 }
@@ -67,7 +70,7 @@ export class MastersService {
       throw new BadRequestException('Рабочий день должен заканчиваться позже, чем начинается')
     }
 
-    const { onboarded, displayName, specialties, ...rest } = dto
+    const { onboarded, displayName, specialties, workDays, ...rest } = dto
     // Порядок выбора сохраняем, повторы отбрасываем: первая — «основная»
     const nextSpecialties = specialties ? [...new Set(specialties)] : undefined
     const added = nextSpecialties?.filter((id) => !current.specialties.includes(id)) ?? []
@@ -89,6 +92,7 @@ export class MastersService {
           ...rest,
           ...(displayName !== undefined ? { displayName: displayName.trim() } : {}),
           ...(nextSpecialties ? { specialties: nextSpecialties } : {}),
+          ...(workDays ? { workDays: [...new Set(workDays)].sort((a, b) => a - b) } : {}),
           // Дата фиксирует первое прохождение: повторный onboarded её не сдвигает
           ...(onboarded && !current.onboardedAt ? { onboardedAt: new Date() } : {}),
         },

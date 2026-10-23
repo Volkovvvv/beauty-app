@@ -51,8 +51,16 @@ export interface ApiMaster {
   username: string | null
   dayStart: number
   dayEnd: number
+  workDays: number[]
   specialties: string[]
   onboardedAt: string | null
+}
+
+/** Ручная правка окон дня: начала часов, минуты от полуночи */
+export interface ApiWindowEdit {
+  date: ISODate
+  add: number[]
+  rem: number[]
 }
 
 export interface ApiSpecialty {
@@ -138,7 +146,7 @@ export const masterFromApi = (m: ApiMaster): Master => ({
   name: m.displayName ?? m.telegramName.split(' ')[0],
   telegramName: m.telegramName,
   username: m.username,
-  workday: { start: m.dayStart, end: m.dayEnd },
+  workday: { start: m.dayStart, end: m.dayEnd, days: m.workDays },
   specialties: m.specialties,
   onboarded: m.onboardedAt !== null,
 })

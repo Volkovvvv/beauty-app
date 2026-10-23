@@ -1,3 +1,7 @@
 export { default as StorySheet } from './ui/StorySheet'
+export { default as MonthWindowsPage } from './ui/MonthWindowsPage'
+export { default as MonthStoriesPage } from './ui/MonthStoriesPage'
 export { storyWindows, windowsLabel } from './model/windows'
+export { monthStart } from './model/month'
+export type { WindowEdit, WindowEdits } from './model/month'
 export type { ShareResult } from './model/share'

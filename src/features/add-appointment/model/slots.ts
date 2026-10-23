@@ -1,4 +1,4 @@
-import { dayAppointments, isBusy, type Appointment, type Workday } from '../../../entities/appointment'
+import { dayAppointments, isBusy, isWorkday, type Appointment, type Workday } from '../../../entities/appointment'
 import { addDays, daysBetween, type ISODate } from '../../../shared/lib/date'
 import type { Now } from '../../../shared/lib/useNow'
 
@@ -31,8 +31,10 @@ interface SlotsInput {
 
 // Слоты дня по сетке в полчаса. Слот занят, если запись нужной длины
 // пересечётся с другой, не влезет до конца дня или уже прошла.
+// В выходной по графику свободных слотов нет — время можно ввести своё.
 export function daySlots({ appointments, date, minutes, now, workday, ignoreId, extra }: SlotsInput): Slot[] {
   const day = dayAppointments(appointments, date)
+  const dayOff = !isWorkday(workday, date)
   const times = new Set<number>()
   for (let t = workday.start; t < workday.end; t += STEP) times.add(t)
   if (extra != null) times.add(extra)
@@ -43,6 +45,7 @@ export function daySlots({ appointments, date, minutes, now, workday, ignoreId, 
     .map((start) => ({
       start,
       busy:
+        dayOff ||
         date < now.date ||
         (date === now.date && start <= now.minutes) ||
         start + length > workday.end ||

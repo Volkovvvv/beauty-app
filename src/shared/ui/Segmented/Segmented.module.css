@@ -9,7 +9,7 @@
 
 .option {
   min-height: 38px;
-  padding: 0 14px;
+  padding: 0 11px;
   border: none;
   border-radius: var(--radius-pill);
   background: transparent;

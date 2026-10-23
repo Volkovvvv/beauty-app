@@ -16,9 +16,12 @@ import { NewAppointmentPage, type BookingInitial, type BookingResult } from '../
 import { AddClientPage, type ClientForm } from '../../features/add-client'
 import { PricesPage } from '../../features/edit-prices'
 import { OnboardingPage } from '../../features/onboarding'
-import { StorySheet, type ShareResult } from '../../features/story-windows'
+import { MonthStoriesPage, MonthWindowsPage, monthStart, StorySheet, type ShareResult } from '../../features/story-windows'
 import { useStore } from '../model/useStore'
 import { backTarget, isTab, openView, TABS, type View } from '../model/navigation'
+
+// Окна на месяц можно готовить на текущий и два следующих месяца
+const MONTHS_AHEAD = 2
 
 export default function App() {
   const store = useStore()
@@ -238,6 +241,48 @@ export default function App() {
             if (result === 'downloaded') setToast('Картинка сохранена — выложите её в сторис')
           }}
           onError={setToast}
+          onOpenMonth={() => {
+            setStories(false)
+            open({ name: 'monthWindows', month: monthStart(now.date) })
+          }}
+        />
+      ) : null}
+
+      {view.name === 'monthWindows' ? (
+        <MonthWindowsPage
+          appointments={store.appointments}
+          workday={workday}
+          now={now}
+          edits={store.windowEdits}
+          month={view.month}
+          canPrev={view.month > monthStart(now.date)}
+          canNext={view.month < monthStart(now.date, MONTHS_AHEAD)}
+          onMonth={(step) =>
+            setView((current) => (current.name === 'monthWindows' ? { ...current, month: monthStart(current.month, step) } : current))
+          }
+          onLoadEdits={store.loadWindowEdits}
+          onSaveEdits={store.saveWindowEdits}
+          name={storyName}
+          onCreate={() => open({ name: 'monthStories', month: view.month })}
+          onBack={goBack}
+        />
+      ) : null}
+
+      {view.name === 'monthStories' ? (
+        <MonthStoriesPage
+          appointments={store.appointments}
+          workday={workday}
+          now={now}
+          edits={store.windowEdits}
+          month={view.month}
+          name={storyName}
+          username={store.master?.username ?? null}
+          onShared={(result, left) => {
+            if (result === 'downloaded') setToast(left ? `Картинка сохранена, осталось ${left}` : 'Все картинки сохранены — выложите их в сторис')
+            else if (!left) setToast('Серия готова')
+          }}
+          onError={setToast}
+          onBack={goBack}
         />
       ) : null}
 

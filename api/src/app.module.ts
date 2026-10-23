@@ -17,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module'
 import { RemindersModule } from './reminders/reminders.module'
 import { ServicesModule } from './services/services.module'
 import { StoriesModule } from './stories/stories.module'
+import { WindowsModule } from './windows/windows.module'
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { StoriesModule } from './stories/stories.module'
     RemindersModule,
     HealthModule,
     StoriesModule,
+    WindowsModule,
   ],
   providers: [
     // Глобально: любой новый роут закрыт, пока не помечен @Public.

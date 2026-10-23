@@ -1,0 +1,204 @@
+/* Сторис серии 360×640 — значения из MonthStory.dc.html (раскладка week).
+   Цвета свои у каждого шаблона: картинка уходит наружу и не зависит от темы приложения. */
+
+.card {
+  position: relative;
+  width: 360px;
+  height: 640px;
+  overflow: hidden;
+  font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--base);
+  color: var(--fg);
+}
+
+.cherry {
+  --base: #7a1630;
+  --fg: #fbeff1;
+  --muted: #f1c9d1;
+  --chip-bg: #fbeff1;
+  --chip-fg: #7a1630;
+  --faint: rgba(251, 239, 241, 0.2);
+  --btn-bg: #fbeff1;
+  --btn-fg: #2a1a1f;
+  background: radial-gradient(80% 50% at 90% 0%, #a3324f 0%, rgba(163, 50, 79, 0) 70%), #7a1630;
+}
+
+.cream {
+  --base: #f6eeea;
+  --fg: #2a1a1f;
+  --muted: #6e5258;
+  --chip-bg: #7a1630;
+  --chip-fg: #fbeff1;
+  --faint: rgba(42, 26, 31, 0.14);
+  --btn-bg: #2a1a1f;
+  --btn-fg: #f6eeea;
+}
+
+.night {
+  --base: #2a1a1f;
+  --fg: #f6eeea;
+  --muted: #f1c9d1;
+  --chip-bg: #f1c9d1;
+  --chip-fg: #2a1a1f;
+  --faint: rgba(246, 238, 234, 0.14);
+  --btn-bg: #f1c9d1;
+  --btn-fg: #2a1a1f;
+  background: radial-gradient(90% 45% at 0% 0%, #4a2a33 0%, rgba(74, 42, 51, 0) 70%), #2a1a1f;
+}
+
+.photo {
+  --base: #3a2228;
+  --fg: #fff;
+  --muted: rgba(255, 255, 255, 0.88);
+  --chip-bg: #fff;
+  --chip-fg: #2a1a1f;
+  --faint: rgba(255, 255, 255, 0.28);
+  --btn-bg: #fff;
+  --btn-fg: #2a1a1f;
+}
+
+.photoBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.photoShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(25, 12, 16, 0.35) 0%, rgba(25, 12, 16, 0.6) 100%);
+}
+
+.content {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 34px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.name {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.page {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 46px;
+  line-height: 0.92;
+}
+
+.range {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--faint);
+}
+
+.date {
+  flex: none;
+  width: 38px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wd {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.num {
+  font-family: 'Instrument Serif', serif;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.chips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.tight .rows { gap: 4px; }
+.tight .row { padding-top: 4px; }
+.tight .num { font-size: 22px; }
+
+.tight .chip {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cta {
+  padding: 11px 17px;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.handle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}

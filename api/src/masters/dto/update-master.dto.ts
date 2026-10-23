@@ -35,6 +35,15 @@ export class UpdateMasterDto {
   @Max(1440)
   dayEnd?: number
 
+  /** Рабочие дни недели: 0 — понедельник … 6 — воскресенье. Пустой список — отпуск. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(7)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(6, { each: true })
+  workDays?: number[]
+
   /** За сколько часов до визита напомнить. 0 — выключено, предел — неделя. */
   @IsOptional()
   @IsInt()

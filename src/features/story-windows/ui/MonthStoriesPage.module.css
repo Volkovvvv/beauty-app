@@ -1,0 +1,201 @@
+/* Серия сторис на месяц — макет 6a */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.screen > * { flex: none; }
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.titleBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.sub {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.template {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  box-sizing: border-box;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.templateOn { border-color: var(--ink); }
+
+.swatch {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgba(42, 26, 31, 0.15);
+}
+
+.photoBtn {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1.5px dashed var(--dashed);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--cherry);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Карточка 360×640 в три четверти */
+.preview {
+  align-self: center;
+  width: 270px;
+  height: 480px;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(90, 30, 45, 0.22);
+}
+
+.previewScale {
+  width: 360px;
+  height: 640px;
+  transform: scale(0.75);
+  transform-origin: 0 0;
+}
+
+.pages {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.page {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 114px;
+  padding: 0;
+  border: 2.5px solid transparent;
+  border-radius: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: transparent;
+}
+
+.pageOn { border-color: var(--ink); }
+
+/* 64 − рамка 2×2.5 = 59px внутри: 59 / 360 */
+.pageScale {
+  display: block;
+  width: 360px;
+  height: 640px;
+  transform: scale(0.1639);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.pageDone {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+}
+
+.warn {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--rose);
+  color: var(--cherry);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.handleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.handleInput {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  outline: none;
+}
+
+.handleInput:focus { border-color: var(--cherry); }
+
+.empty {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.share {
+  position: fixed;
+  left: 50%;
+  bottom: calc(22px + var(--safe-bottom));
+  z-index: 20;
+  transform: translateX(-50%);
+  width: min(524px, calc(100% - 36px));
+  min-height: 54px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: var(--shadow-dark);
+}
+
+.share:disabled { opacity: 0.5; }

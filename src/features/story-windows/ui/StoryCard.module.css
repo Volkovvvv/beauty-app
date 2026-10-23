@@ -20,8 +20,6 @@
   line-height: 0.92;
 }
 
-.compact .title { font-size: 48px; }
-
 .name {
   font-size: 12px;
   font-weight: 800;
@@ -50,37 +48,15 @@
   font-weight: 800;
 }
 
-/* Список окон: занимает всё свободное место, при нехватке уменьшается целиком */
-.fit {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.fitInner {
-  flex: none;
-  transform-origin: center center;
-}
-
 .grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
 
-.compact .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
 .day {
   display: flex;
   align-items: baseline;
   gap: 12px;
-}
-
-.compact .day {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
 }
 
 .dayLabel {
@@ -89,8 +65,6 @@
   font-size: 14px;
   font-weight: 800;
 }
-
-.compact .dayLabel { width: auto; }
 
 .times {
   display: flex;
@@ -114,10 +88,8 @@
 .cherry .range { font-weight: 600; }
 
 .cherry .grid { gap: 10px; }
-.cherry.compact .grid { gap: 10px 12px; }
 
 .cherry .day { align-items: center; }
-.cherry.compact .day { align-items: flex-start; }
 
 .cherry .times { gap: 5px; }
 
@@ -127,11 +99,6 @@
   background: #fbeff1;
   color: #7a1630;
   font-size: 14.5px;
-}
-
-.cherry.compact .time {
-  padding: 3px 8px;
-  font-size: 12.5px;
 }
 
 .cherry .cta { background: #fbeff1; color: #2a1a1f; }
@@ -168,8 +135,6 @@
   border-top: 1px solid #2a1a1f;
 }
 
-.cream.compact .day { padding: 6px 0; }
-
 .cream .dayLabel {
   width: 76px;
   font-family: 'Instrument Serif', serif;
@@ -178,19 +143,12 @@
   font-weight: 400;
 }
 
-.cream.compact .dayLabel {
-  width: auto;
-  font-size: 19px;
-}
-
 .cream .times { gap: 4px 14px; }
 
 .cream .time {
   font-size: 17px;
   color: #7a1630;
 }
-
-.cream.compact .time { font-size: 14px; }
 
 .creamFooter {
   display: flex;
@@ -259,14 +217,12 @@
 .photo .grid { column-gap: 14px; }
 
 .photo .day { padding: 9px 0; }
-.photo.compact .day { padding: 6px 0; }
 
 .photo .dayBorder { border-top: 1px solid rgba(255, 255, 255, 0.28); }
 
 .photo .times { gap: 2px 12px; }
 
 .photo .time { font-size: 17px; }
-.photo.compact .time { font-size: 14px; }
 
 .photo .cta { background: #fff; color: #2a1a1f; }
 
@@ -295,10 +251,7 @@
   gap: 8px;
 }
 
-.night.compact .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-.night .day,
-.night.compact .day {
+.night .day {
   flex-direction: column;
   align-items: stretch;
   gap: 5px;
@@ -318,7 +271,6 @@
 .night .times { gap: 2px 10px; }
 
 .night .time { font-size: 18px; }
-.night.compact .time { font-size: 14px; }
 
 .nightFooter {
   display: flex;
