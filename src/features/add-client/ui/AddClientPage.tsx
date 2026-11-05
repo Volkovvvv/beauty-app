@@ -6,9 +6,6 @@ import s from './AddClientPage.module.css'
 
 export interface ClientForm {
   name: string
-  shape?: string
-  likes?: string
-  allergy?: string
   payment?: string
   repeatWeeks: number
 }
@@ -23,7 +20,7 @@ const weeks = (n: number) => `раз в ${n === 1 ? 'неделю' : `${n} ${plu
 
 // Новая клиентка: имя обязательно, остальное — если мастер знает сразу
 export default function AddClientPage({ catalog, onSave, onCancel }: AddClientPageProps) {
-  const { master, wording } = useMaster()
+  const { master } = useMaster()
   // Интервал по умолчанию — обычный для основного направления мастера
   const usual = catalog.find((sp) => sp.id === master.specialties[0])?.repeatWeeks ?? 4
   const [form, setForm] = useState<ClientForm>({ name: '', repeatWeeks: usual })
@@ -40,9 +37,6 @@ export default function AddClientPage({ catalog, onSave, onCancel }: AddClientPa
     const trim = (v?: string) => v?.trim() || undefined
     onSave({
       name: form.name.trim(),
-      shape: trim(form.shape),
-      likes: trim(form.likes),
-      allergy: trim(form.allergy),
       payment: trim(form.payment),
       repeatWeeks: form.repeatWeeks,
     }).catch((e: Error) => {
@@ -60,14 +54,6 @@ export default function AddClientPage({ catalog, onSave, onCancel }: AddClientPa
         </div>
 
         <TextField label="Имя" value={form.name} onChange={set('name')} placeholder="Алина Морозова" maxLength={100} autoFocus />
-        <TextField label={wording.cardLabel} value={form.shape ?? ''} onChange={set('shape')} maxLength={100} />
-        <TextField label="Что любит" value={form.likes ?? ''} onChange={set('likes')} />
-        <TextField
-          label="Аллергия и противопоказания"
-          value={form.allergy ?? ''}
-          onChange={set('allergy')}
-          hint="Покажем на карточке записи красным — перед визитом не забудете"
-        />
         <TextField label="Оплата" value={form.payment ?? ''} onChange={set('payment')} placeholder="Перевод, наличные" maxLength={100} />
         <StepperField
           label="Обычно приходит"

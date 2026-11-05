@@ -74,8 +74,6 @@ export default function NextAppointmentCard({ appointment, client, now, onArrive
       </div>
 
       <div className={s.tags}>
-        {client.card.shape ? <span className={s.tag}>{client.card.shape}</span> : null}
-        {client.card.allergy ? <span className={s.tag}>Аллергия: {client.card.allergy}</span> : null}
         <span className={s.tag}>{reminderTag(appointment, client)}</span>
       </div>
 

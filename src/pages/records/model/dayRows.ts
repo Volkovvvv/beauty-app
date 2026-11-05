@@ -18,12 +18,12 @@ export interface DayView {
   dayOff: boolean
 }
 
-/** Подряд идущие часы одним окном */
+/** Подряд идущие и перекрытые часы одним окном: своё «9:30» перед «10:00» — с 9:30 до 11:00 */
 function mergeHours(times: readonly number[]): { start: number; end: number }[] {
   const out: { start: number; end: number }[] = []
   for (const t of times) {
     const last = out[out.length - 1]
-    if (last && last.end === t) last.end = t + HOUR
+    if (last && last.end >= t) last.end = Math.max(last.end, t + HOUR)
     else out.push({ start: t, end: t + HOUR })
   }
   return out

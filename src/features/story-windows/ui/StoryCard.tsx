@@ -17,8 +17,8 @@ interface StoryCardProps {
   handle: string
   /** Размытое фото для шаблона «Фото» (data URL) */
   photo: string | null
-  /** Сколько окон не поместилось в кадр */
-  onHidden?: (windows: number) => void
+  /** Сколько первых дней поместилось в кадр; остальные уйдут в следующую сторис */
+  onShown?: (days: number) => void
 }
 
 // Без своего фото — вишнёвые разводы, как в макете
@@ -28,7 +28,7 @@ const DEFAULT_PHOTO =
 // Сторис 360×640 по шаблонам «Окошки в сторис». Верстка в точках макета:
 // превью уменьшает её трансформом, картинка снимается с этого же узла ×3.
 const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
-  { template, days, range, name, handle, photo, onHidden },
+  { template, days, range, name, handle, photo, onShown },
   ref
 ) {
   const root = cx(s.card, s[template])
@@ -53,7 +53,7 @@ const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
         const grid = <div className={s.grid}>{shown}</div>
         return template === 'photo' ? <div className={s.glass}>{grid}</div> : grid
       }}
-      onHidden={(n) => onHidden?.(days.slice(n).reduce((sum, d) => sum + d.times.length, 0))}
+      onHidden={(n) => onShown?.(n)}
     />
   )
 

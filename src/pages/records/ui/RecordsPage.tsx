@@ -20,6 +20,8 @@ interface RecordsPageProps {
   workday: Workday
   /** Ручные правки окон мастера: окна здесь те же, что в сторис и онлайн-записи */
   edits: WindowEdits
+  /** Шаг окон в сторис, часы — для счётчика на кнопке «Окошки в сторис» */
+  storyStep: number
   onLoadEdits: (from: ISODate, to: ISODate) => void
   /** Выбранный день; живёт в App, чтобы переживать смену вкладок */
   date: ISODate
@@ -41,6 +43,7 @@ export default function RecordsPage({
   now,
   workday,
   edits,
+  storyStep,
   onLoadEdits,
   date,
   onSelectDate,
@@ -68,7 +71,7 @@ export default function RecordsPage({
     [ctx, from]
   )
   const day = useMemo(() => dayView(ctx, date), [ctx, date])
-  const storyCount = useMemo(() => storyWindows(ctx).days.reduce((n, d) => n + d.times.length, 0), [ctx])
+  const storyCount = useMemo(() => storyWindows(ctx, storyStep).days.reduce((n, d) => n + d.times.length, 0), [ctx, storyStep])
 
   const pick = (d: ISODate) => {
     onSelectDate(d)

@@ -17,7 +17,17 @@ import { AddClientPage, type ClientForm } from '../../features/add-client'
 import { ServicesPage } from '../../features/edit-prices'
 import { OnboardingPage } from '../../features/onboarding'
 import { BookingPreviewPage } from '../../features/online-booking'
-import { MonthStoriesPage, MonthWindowsPage, monthStart, StorySheet, type ShareResult } from '../../features/story-windows'
+import {
+  defaultStep,
+  loadPrefs,
+  MonthStoriesPage,
+  MonthWindowsPage,
+  monthStart,
+  savePrefs,
+  StorySheet,
+  type ShareResult,
+  type StoryStep,
+} from '../../features/story-windows'
 import { useStore } from '../model/useStore'
 import { backTarget, isTab, openView, TABS, type View } from '../model/navigation'
 
@@ -36,6 +46,8 @@ export default function App() {
   const [recordsDate, setRecordsDate] = useState(now.date)
   // Загрузка дольше обычного — подсказываем про сеть, а не молча крутим «Загрузка…»
   const [slowBoot, setSlowBoot] = useState(false)
+  // Шаг окон в сторис, выбранный мастером; не выбран — по длительности услуг
+  const [chosenStep, setChosenStep] = useState<StoryStep | undefined>(() => loadPrefs().step)
 
   useEffect(() => {
     applyTheme()
@@ -140,6 +152,12 @@ export default function App() {
 
   const masterName = store.master?.name ?? telegramFirstName() ?? 'мастер'
   const workday = store.master?.workday ?? DEFAULT_WORKDAY
+  // Шаг окон в сторис: выбор мастера или типичная длительность её услуг
+  const storyStep = chosenStep ?? defaultStep(store.services.map((sv) => sv.minutes))
+  const changeStoryStep = (step: StoryStep) => {
+    setChosenStep(step)
+    savePrefs({ step })
+  }
   // Подпись на сторис: «Вика · ногти». Направлений больше двух — без перечисления
   const specialtyTitles = store.specialties.filter((sp) => store.master?.specialties.includes(sp.id)).map((sp) => sp.label)
   const specialtyLabels = specialtyTitles.map((label) => label.toLowerCase())
@@ -241,6 +259,7 @@ export default function App() {
           now={now}
           workday={workday}
           edits={store.windowEdits}
+          storyStep={storyStep}
           onLoadEdits={store.loadWindowEdits}
           date={recordsDate}
           onSelectDate={setRecordsDate}
@@ -256,12 +275,18 @@ export default function App() {
           workday={workday}
           now={now}
           edits={store.windowEdits}
+          onLoadEdits={store.loadWindowEdits}
+          onSaveEdits={store.saveWindowEdits}
+          step={storyStep}
+          onStep={changeStoryStep}
           name={storyName}
           username={store.master?.instagram ?? store.master?.username ?? null}
           onClose={closeStories}
-          onShared={(result: ShareResult) => {
-            setStories(false)
-            if (result === 'downloaded') setToast('Картинка сохранена — выложите её в сторис')
+          onShared={(result: ShareResult, left: number) => {
+            // Серия из нескольких сторис: шторка ждёт следующую
+            if (!left) setStories(false)
+            if (result === 'downloaded')
+              setToast(left ? `Картинка сохранена, осталось ${left}` : 'Картинка сохранена — выложите её в сторис')
           }}
           onError={setToast}
           onOpenMonth={() => {
@@ -285,6 +310,7 @@ export default function App() {
           }
           onLoadEdits={store.loadWindowEdits}
           onSaveEdits={store.saveWindowEdits}
+          step={storyStep}
           name={storyName}
           onCreate={() => open({ name: 'monthStories', month: view.month })}
           onBack={goBack}
@@ -297,6 +323,7 @@ export default function App() {
           workday={workday}
           now={now}
           edits={store.windowEdits}
+          step={storyStep}
           month={view.month}
           name={storyName}
           username={store.master?.instagram ?? store.master?.username ?? null}

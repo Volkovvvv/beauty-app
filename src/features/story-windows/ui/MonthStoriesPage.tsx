@@ -7,7 +7,7 @@ import { IconButton } from '../../../shared/ui'
 import { storyFontCSS } from '../model/fonts'
 import { blurredBackground } from '../model/image'
 import { monthWindows, storyPages, type WindowEdits } from '../model/month'
-import { loadPrefs, savePrefs, TEMPLATES, type StoryTemplate } from '../model/prefs'
+import { loadPrefs, savePrefs, TEMPLATES, type StoryStep, type StoryTemplate } from '../model/prefs'
 import { publishStory, type ShareResult } from '../model/share'
 import { windowsLabel } from '../model/windows'
 import MonthStoryCard from './MonthStoryCard'
@@ -18,6 +18,8 @@ interface MonthStoriesPageProps {
   workday: Workday
   now: Now
   edits: WindowEdits
+  /** Шаг окон в сторис, часы */
+  step: StoryStep
   /** Первое число месяца */
   month: ISODate
   /** «Вика · ногти» */
@@ -31,7 +33,7 @@ interface MonthStoriesPageProps {
 
 // Серия сторис на месяц (6a): по неделе на сторис, данные — из окон месяца
 // вместе с правками. Telegram публикует сторис по одной — выкладываем по очереди
-export default function MonthStoriesPage({ appointments, workday, now, edits, month, name, username, onShared, onError, onBack }: MonthStoriesPageProps) {
+export default function MonthStoriesPage({ appointments, workday, now, edits, step, month, name, username, onShared, onError, onBack }: MonthStoriesPageProps) {
   const [prefs] = useState(loadPrefs)
   const [template, setTemplate] = useState<StoryTemplate>(prefs.template ?? 'cherry')
   const [photo, setPhoto] = useState<string | null>(prefs.photo ?? null)
@@ -45,8 +47,8 @@ export default function MonthStoriesPage({ appointments, workday, now, edits, mo
   const file = useRef<HTMLInputElement>(null)
 
   const pages = useMemo(
-    () => storyPages(monthWindows({ appointments, workday, now, edits }, month)),
-    [appointments, workday, now, edits, month]
+    () => storyPages(monthWindows({ appointments, workday, now, edits }, month), step),
+    [appointments, workday, now, edits, month, step]
   )
   const current = Math.min(index, Math.max(0, pages.length - 1))
   const page = pages[current]

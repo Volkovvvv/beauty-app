@@ -9,13 +9,7 @@ import type { Now } from '../../../shared/lib/useNow'
 import { Avatar, BottomBar, Button, EmptyState, IconButton, Panel, Screen, SectionHeader, Stack, TextAction, Title } from '../../../shared/ui'
 import s from './ClientPage.module.css'
 
-// Подпись первого поля зависит от направления мастера — её подставит экран
-const CARD_FIELDS: ReadonlyArray<[keyof ClientCard, string | null]> = [
-  ['shape', null],
-  ['likes', 'Любит'],
-  ['allergy', 'Аллергия'],
-  ['payment', 'Оплата'],
-]
+const CARD_FIELDS: ReadonlyArray<[keyof ClientCard, string]> = [['payment', 'Оплата']]
 
 const everyWeeks = (n: number) => (n === 1 ? 'Каждую неделю' : `Каждые ${n} ${plural(n, ['неделю', 'недели', 'недель'])}`)
 
@@ -138,8 +132,8 @@ export default function ClientPage({ client, appointments, now, onBack, onBook, 
             {CARD_FIELDS.map(([key, label]) =>
               client.card[key] ? (
                 <div key={key} className={s.field}>
-                  <span className={s.fieldKey}>{label ?? wording.cardLabel}</span>
-                  <span className={key === 'allergy' ? s.fieldAlert : s.fieldValue}>{client.card[key]}</span>
+                  <span className={s.fieldKey}>{label}</span>
+                  <span className={s.fieldValue}>{client.card[key]}</span>
                 </div>
               ) : null
             )}

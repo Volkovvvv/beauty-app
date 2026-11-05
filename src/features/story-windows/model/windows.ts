@@ -1,6 +1,6 @@
 import { addDays, dayOfMonth, rangeLabel, weekday, WEEKDAYS, type ISODate } from '../../../shared/lib/date'
 import { count } from '../../../shared/lib/format'
-import { monthDay, type WindowsContext } from './month'
+import { monthDay, storySlots, type MonthDay, type StorySlot, type WindowsContext } from './month'
 
 /** Неделя — одна сторис из шторки, месяц — серия по неделям (экран окон месяца) */
 export type StoryPeriod = 'week' | 'month'
@@ -13,39 +13,41 @@ export interface StoryDay {
   times: number[]
 }
 
+/** День недели в редакторе шторки: все окна с шагом, включая убранные */
+export interface WeekDay {
+  date: ISODate
+  /** «Чт 22» */
+  label: string
+  day: MonthDay
+  slots: StorySlot[]
+}
+
 export interface StoryWindows {
   /** «22–28 октября», «22 окт – 20 нояб» */
   range: string
+  /** Дни с окнами — то, что попадёт на картинку */
   days: StoryDay[]
+  /** Все семь дней — для правки окон */
+  week: WeekDay[]
 }
 
 const WEEK = 7
-
-/** Ключ окна для отметок «убрать из сторис» */
-export const windowKey = (date: ISODate, start: number): string => `${date}@${start}`
 
 export const windowsLabel = (n: number): string => count(n, ['окно', 'окна', 'окон'])
 
 /**
  * Свободные окна на неделю вперёд, начиная с сегодня. Те же, что в календаре
  * месяца и ленте «Записей»: свободные часы рабочего дня с ручными правками
- * мастера; выходной по графику попадает сюда, только если мастер добавил окно.
+ * мастера, но с шагом step часов — см. storySlots.
  */
-export function storyWindows(ctx: WindowsContext): StoryWindows {
+export function storyWindows(ctx: WindowsContext, step: number): StoryWindows {
   const dates = Array.from({ length: WEEK }, (_, i) => addDays(ctx.now.date, i))
-  const days = dates
-    .map((date) => ({
-      date,
-      label: `${WEEKDAYS[weekday(date)]} ${dayOfMonth(date)}`,
-      times: monthDay(ctx, date).times,
-    }))
+  const week = dates.map((date): WeekDay => {
+    const day = monthDay(ctx, date)
+    return { date, label: `${WEEKDAYS[weekday(date)]} ${dayOfMonth(date)}`, day, slots: storySlots(day, step) }
+  })
+  const days = week
+    .map((d) => ({ date: d.date, label: d.label, times: d.slots.filter((s) => s.on).map((s) => s.start) }))
     .filter((d) => d.times.length)
-  return { range: rangeLabel(dates[0], dates[dates.length - 1]), days }
-}
-
-/** Только окна, которые мастер не убрал */
-export function visibleDays(days: readonly StoryDay[], off: ReadonlySet<string>): StoryDay[] {
-  return days
-    .map((d) => ({ ...d, times: d.times.filter((t) => !off.has(windowKey(d.date, t))) }))
-    .filter((d) => d.times.length)
+  return { range: rangeLabel(dates[0], dates[dates.length - 1]), days, week }
 }

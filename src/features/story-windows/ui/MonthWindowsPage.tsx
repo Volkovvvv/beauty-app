@@ -11,12 +11,13 @@ import {
   monthWindows,
   sameWeekdays,
   storyPages,
+  storyTimes,
   toggleHour,
   type MonthDay,
   type WindowEdit,
   type WindowEdits,
 } from '../model/month'
-import { loadPrefs } from '../model/prefs'
+import { loadPrefs, type StoryStep } from '../model/prefs'
 import { windowsLabel } from '../model/windows'
 import MonthStoryCard from './MonthStoryCard'
 import s from './MonthWindowsPage.module.css'
@@ -52,6 +53,8 @@ interface MonthWindowsPageProps {
   onMonth: (step: number) => void
   onLoadEdits: (from: ISODate, to: ISODate) => void
   onSaveEdits: (changes: Record<ISODate, WindowEdit | null>) => void
+  /** Шаг окон в сторис, часы: внизу — сколько окон попадёт в серию */
+  step: StoryStep
   /** «Вика · ногти» — подпись на превью */
   name: string
   onCreate: () => void
@@ -71,6 +74,7 @@ export default function MonthWindowsPage({
   onMonth,
   onLoadEdits,
   onSaveEdits,
+  step,
   name,
   onCreate,
   onBack,
@@ -78,7 +82,7 @@ export default function MonthWindowsPage({
   const [prefs] = useState(loadPrefs)
   const ctx = useMemo(() => ({ appointments, workday, now, edits }), [appointments, workday, now, edits])
   const days = useMemo(() => monthWindows(ctx, month), [ctx, month])
-  const pages = useMemo(() => storyPages(days), [days])
+  const pages = useMemo(() => storyPages(days, step), [days, step])
   const [selected, setSelected] = useState<ISODate | null>(null)
 
   useEffect(() => {
@@ -88,8 +92,10 @@ export default function MonthWindowsPage({
   // Другой месяц — выбран первый день, который ещё можно править
   const day = days.find((d) => d.date === selected && !d.past) ?? days.find((d) => !d.past) ?? days[0]
   const upcoming = days.filter((d) => !d.past)
-  const withWindows = upcoming.filter((d) => d.times.length)
-  const total = withWindows.reduce((n, d) => n + d.times.length, 0)
+  // Внизу — то, что попадёт в сторис: с шагом
+  const storyCounts = upcoming.map((d) => storyTimes(d, step).length)
+  const withWindows = upcoming.filter((_, i) => storyCounts[i])
+  const total = storyCounts.reduce((n, c) => n + c, 0)
   const edited = upcoming.filter((d) => d.edited)
   const monthName = MONTHS[monthIndex(month)].toLowerCase()
 

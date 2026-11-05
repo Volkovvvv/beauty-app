@@ -63,11 +63,8 @@
   color: var(--muted);
 }
 
-.fieldValue,
-.fieldAlert {
+.fieldValue {
   text-align: right;
   font-size: 14px;
   font-weight: 700;
 }
-
-.fieldAlert { color: var(--danger); }
