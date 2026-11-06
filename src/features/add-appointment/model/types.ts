@@ -12,6 +12,9 @@ export interface BookingInitial {
   minutes?: number
   replaceId?: string
   note?: string
+  /** Переключатели переносимой записи; не заданы — включены */
+  remind?: boolean
+  rebook?: boolean
 }
 
 /** Итог формы: черновик записи. remind и rebook — переключатели внизу формы */

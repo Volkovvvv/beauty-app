@@ -217,13 +217,21 @@ export function useStore(): Store {
         price: servicesPrice(draft.services),
         confirmed: false,
         declined: false,
+        remind: draft.remind,
+        rebook: draft.rebook,
       }
-      setAppointments(patchItem<Appointment>(id, patch))
+      // Услуги шлём, только если их поменяли: убранную из прайса сервер
+      // не даст выбрать заново, и перенос такой записи упал бы
+      const serviceIds = draft.services.map((s) => s.id)
+      const sameServices = serviceIds.join() === before.services.map((s) => s.id).join()
+      setAppointments(patchItem<Appointment>(id, sameServices ? { ...patch, services: before.services, price: before.price } : patch))
       api
         .patch<ApiAppointment>(`/appointments/${id}`, {
           startsAt: startsAtToApi(draft.date, draft.start),
-          serviceIds: draft.services.map((s) => s.id),
+          ...(sameServices ? {} : { serviceIds }),
           duration: draft.minutes,
+          remind: draft.remind,
+          rebook: draft.rebook,
         })
         .then((saved) => setAppointments(patchItem<Appointment>(id, appointmentFromApi(saved))))
         .catch((e: unknown) => {
@@ -237,6 +245,8 @@ export function useStore(): Store {
               price: before.price,
               confirmed: before.confirmed,
               declined: before.declined,
+              remind: before.remind,
+              rebook: before.rebook,
             })
           )
           reportError(errorText(e))

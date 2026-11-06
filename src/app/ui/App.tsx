@@ -384,6 +384,8 @@ export default function App() {
               minutes: a.minutes,
               note: a.note,
               replaceId: a.id,
+              remind: a.remind,
+              rebook: a.rebook,
             })
           }
           onWrite={write}

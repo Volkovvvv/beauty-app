@@ -62,8 +62,8 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
     const picked = new Set(initial.serviceIds ?? [])
     return initial.minutes === servicesMinutes(services.filter((s) => picked.has(s.id))) ? null : initial.minutes
   })
-  const [remind, setRemind] = useState(true)
-  const [rebook, setRebook] = useState(true)
+  const [remind, setRemind] = useState(initial.remind ?? true)
+  const [rebook, setRebook] = useState(initial.rebook ?? true)
   const [picking, setPicking] = useState(false)
 
   const client = clients.find((c) => c.id === clientId) ?? null
