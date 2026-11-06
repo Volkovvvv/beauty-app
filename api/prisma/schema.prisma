@@ -85,6 +85,7 @@ model Master {
   appointments Appointment[]
   photos       ClientPhoto[]
   windowEdits  WindowEdit[]
+  stories      StoryImage[]
 
   @@map("masters")
 }
@@ -275,6 +276,9 @@ model Reminder {
   sentAt      DateTime?
   error       String?
   attempts    Int          @default(0)
+  // Экземпляр API взял напоминание в отправку до этого момента: другие его
+  // не трогают. Упал посреди отправки — после срока возьмёт следующий.
+  lockedUntil DateTime?
   createdAt   DateTime     @default(now())
 
   @@unique([appointmentId, kind])
@@ -322,4 +326,23 @@ enum ReminderKind {
   // «Пора на коррекцию»: через repeatWeeks после визита, если клиентка
   // так и не записалась снова.
   REBOOK
+}
+
+// ─── Сторис ──────────────────────────────────────────────────────────────
+
+// Картинка «Окошки в сторис»: Telegram забирает её по публичной ссылке сразу
+// после shareToStory. В базе, а не в памяти: запрос Telegram может прийти
+// на другой экземпляр API. Живёт 15 минут, у мастера — три последние.
+model StoryImage {
+  // 128 случайных бит в hex: ссылка открыта без входа, угадать её нельзя
+  id        String   @id
+  masterId  String
+  master    Master   @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  data      Bytes
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([masterId, createdAt])
+  @@index([expiresAt])
+  @@map("story_images")
 }

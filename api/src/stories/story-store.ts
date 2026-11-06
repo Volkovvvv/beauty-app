@@ -1,52 +1,42 @@
 import { randomBytes } from 'node:crypto'
+import { Injectable } from '@nestjs/common'
+import { PrismaService } from '../prisma/prisma.service'
 
 /** Сколько картинка доступна по ссылке: Telegram забирает её сразу после shareToStory. */
 export const STORY_TTL_MS = 15 * 60_000
 /** Сколько свежих картинок держим на мастера — старые вытесняются. */
-const PER_MASTER = 3
-/** Потолок на весь процесс, чтобы память не росла без предела. */
-const TOTAL = 300
+export const PER_MASTER = 3
 
-interface Entry {
-  masterId: string
-  data: Buffer
-  expiresAt: number
-}
+/** Id в ссылке: 128 случайных бит — ссылку не угадать, хотя она и открыта без входа. */
+export const newStoryId = (): string => randomBytes(16).toString('hex')
 
 /**
- * Картинки сторис в памяти процесса. Не база: картинка одноразовая,
- * нужна Telegram на минуту, а хранить её дольше незачем.
- * Id — 128 случайных бит: ссылку не угадать, хотя она и открыта без входа.
+ * Картинки сторис. В базе, а не в памяти процесса: Telegram может забрать
+ * картинку с другого экземпляра API, чем тот, что её принял.
  */
+@Injectable()
 export class StoryStore {
-  private readonly items = new Map<string, Entry>()
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(private readonly now: () => number = Date.now) {}
-
-  put(masterId: string, data: Buffer): string {
-    this.sweep()
-    const mine = [...this.items].filter(([, e]) => e.masterId === masterId)
-    // Map хранит порядок вставки: первые — самые старые
-    for (const [id] of mine.slice(0, Math.max(0, mine.length - PER_MASTER + 1))) this.items.delete(id)
-    while (this.items.size >= TOTAL) this.items.delete(this.items.keys().next().value as string)
-
-    const id = randomBytes(16).toString('hex')
-    this.items.set(id, { masterId, data, expiresAt: this.now() + STORY_TTL_MS })
+  async put(masterId: string, data: Buffer, now = new Date()): Promise<string> {
+    const id = newStoryId()
+    await this.prisma.$transaction(async (tx) => {
+      // Заодно чистим просроченные у всех: отдельная уборка по расписанию не нужна
+      await tx.storyImage.deleteMany({ where: { expiresAt: { lte: now } } })
+      const older = await tx.storyImage.findMany({
+        where: { masterId },
+        orderBy: { createdAt: 'desc' },
+        skip: PER_MASTER - 1,
+        select: { id: true },
+      })
+      if (older.length) await tx.storyImage.deleteMany({ where: { id: { in: older.map((o) => o.id) } } })
+      await tx.storyImage.create({ data: { id, masterId, data: new Uint8Array(data), expiresAt: new Date(now.getTime() + STORY_TTL_MS) } })
+    })
     return id
   }
 
-  get(id: string): Buffer | null {
-    const entry = this.items.get(id)
-    if (!entry) return null
-    if (entry.expiresAt <= this.now()) {
-      this.items.delete(id)
-      return null
-    }
-    return entry.data
-  }
-
-  private sweep(): void {
-    const t = this.now()
-    for (const [id, e] of this.items) if (e.expiresAt <= t) this.items.delete(id)
+  async get(id: string, now = new Date()): Promise<Buffer | null> {
+    const row = await this.prisma.storyImage.findFirst({ where: { id, expiresAt: { gt: now } }, select: { data: true } })
+    return row ? Buffer.from(row.data) : null
   }
 }

@@ -12,6 +12,8 @@ const BATCH_SIZE = 100
 const MAX_ATTEMPTS = 3
 /** Сервис лежал сутки — «запись через 2 часа» про прошедший визит хуже, чем молчание. */
 const STALE_AFTER_MS = 2 * 3_600_000
+/** На сколько экземпляр берёт пачку себе. С запасом на медленный Telegram. */
+const LOCK_MS = 5 * 60_000
 
 @Injectable()
 export class RemindersService {
@@ -27,8 +29,23 @@ export class RemindersService {
    * клиентка, заблокировавшая бота, не должна останавливать рассылку остальным.
    */
   async dispatchDue(now = new Date()): Promise<{ sent: number; failed: number }> {
+    // Забираем пачку себе одним запросом: SKIP LOCKED и lockedUntil не дают
+    // двум экземплярам API отправить одно напоминание дважды
+    const claimed = await this.prisma.$queryRaw<{ id: string }[]>`
+      UPDATE "reminders" SET "lockedUntil" = ${new Date(now.getTime() + LOCK_MS)}
+      WHERE "id" IN (
+        SELECT "id" FROM "reminders"
+        WHERE "sentAt" IS NULL AND "scheduledAt" <= ${now} AND "attempts" < ${MAX_ATTEMPTS}
+          AND ("lockedUntil" IS NULL OR "lockedUntil" <= ${now})
+        ORDER BY "scheduledAt"
+        LIMIT ${BATCH_SIZE}
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING "id"`
+    if (claimed.length === 0) return { sent: 0, failed: 0 }
+
     const due = await this.prisma.reminder.findMany({
-      where: { sentAt: null, scheduledAt: { lte: now }, attempts: { lt: MAX_ATTEMPTS } },
+      where: { id: { in: claimed.map((r) => r.id) } },
       select: {
         id: true,
         kind: true,
@@ -132,13 +149,15 @@ export class RemindersService {
 
   /** sentAt заполнен — повторов не будет. note — почему закрыли без отправки */
   private async close(id: string, note?: string): Promise<void> {
-    await this.prisma.reminder.update({ where: { id }, data: { sentAt: new Date(), error: note ?? null } })
+    // updateMany: запись могли перенести, пока шла отправка, — её напоминания уже пересозданы
+    await this.prisma.reminder.updateMany({ where: { id }, data: { sentAt: new Date(), error: note ?? null } })
   }
 
   private async retryLater(id: string, error: string): Promise<void> {
-    await this.prisma.reminder.update({
+    // Снимаем захват: повтор — на следующем тике, а не через LOCK_MS
+    await this.prisma.reminder.updateMany({
       where: { id },
-      data: { attempts: { increment: 1 }, error: error.slice(0, 500) },
+      data: { attempts: { increment: 1 }, error: error.slice(0, 500), lockedUntil: null },
     })
   }
 }
