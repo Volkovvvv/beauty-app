@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { snapshotTitle, type ServiceSnapshot } from '../appointments/services-snapshot'
+import { answerData } from '../bot/answer-data'
 import { BotService } from '../bot/bot.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { isCorrection } from '../specialties/specialties'
@@ -108,8 +109,8 @@ export class RemindersService {
         })
         // Ответ кнопкой виден мастеру: «Подтвердила ✓» или сообщение об отказе
         buttons = [
-          { text: 'Приду ✓', data: `ok:${a.id}` },
-          { text: 'Не смогу', data: `no:${a.id}` },
+          { text: 'Приду ✓', data: answerData('ok', a.id, a.startsAt) },
+          { text: 'Не смогу', data: answerData('no', a.id, a.startsAt) },
         ]
       }
 

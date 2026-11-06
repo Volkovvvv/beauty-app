@@ -2,7 +2,8 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config'
 import { Bot, GrammyError, HttpError, InlineKeyboard } from 'grammy'
 import { InvitesService } from '../invites/invites.service'
-import { AnswersService, type Answer } from './answers.service'
+import { parseAnswerData } from './answer-data'
+import { AnswersService } from './answers.service'
 
 /** Итог попытки отправки — для журнала напоминаний. */
 export interface SendResult {
@@ -17,9 +18,6 @@ export interface InlineButton {
   text: string
   data: string
 }
-
-// ok:<uuid> / no:<uuid> — ответ на напоминание о визите
-const ANSWER_RE = /^(ok|no):([0-9a-f-]{36})$/
 
 const NOT_A_CHAT = 'Я присылаю напоминания о записи и не умею отвечать на сообщения.'
 
@@ -91,12 +89,12 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
     // Кнопки «Приду» / «Не смогу» под напоминанием
     this.bot.on('callback_query:data', async (ctx) => {
-      const match = ANSWER_RE.exec(ctx.callbackQuery.data)
-      if (!match) {
+      const parsed = parseAnswerData(ctx.callbackQuery.data)
+      if (!parsed) {
         await ctx.answerCallbackQuery()
         return
       }
-      const result = await this.answers.answer(BigInt(ctx.from.id), match[1] as Answer, match[2])
+      const result = await this.answers.answer(BigInt(ctx.from.id), parsed)
       await ctx.answerCallbackQuery({ text: result.toast })
       // Кнопки убираем, чтобы не жать дважды; сам текст напоминания остаётся
       await ctx.editMessageReplyMarkup({ reply_markup: undefined }).catch(() => undefined)

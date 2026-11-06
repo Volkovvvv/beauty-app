@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { declinedText } from '../reminders/messages'
-
-export type Answer = 'ok' | 'no'
+import { declinedText, whenLabel } from '../reminders/messages'
+import type { ParsedAnswer } from './answer-data'
 
 export interface AnswerResult {
   /** Короткий ответ клиентке во всплывашке Telegram */
@@ -21,7 +20,7 @@ export interface AnswerResult {
 export class AnswersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async answer(tgId: bigint, answer: Answer, appointmentId: string, now = new Date()): Promise<AnswerResult> {
+  async answer(tgId: bigint, { answer, appointmentId, startsAt }: ParsedAnswer, now = new Date()): Promise<AnswerResult> {
     const a = await this.prisma.appointment.findFirst({
       where: { id: appointmentId, client: { user: { tgId } } },
       select: {
@@ -34,6 +33,10 @@ export class AnswersService {
     })
     // Одинаково для чужой, удалённой и прошедшей записи
     if (!a || a.status !== 'PLANNED' || a.startsAt <= now) return { toast: 'Эта запись уже неактуальна' }
+    // Кнопка под напоминанием о прежнем времени: визит с тех пор перенесли
+    if (startsAt && startsAt.getTime() !== Math.floor(a.startsAt.getTime() / 1000) * 1000) {
+      return { toast: `Запись перенесена на ${whenLabel(a.startsAt, a.master.user.timezone, now)}` }
+    }
 
     if (answer === 'ok') {
       await this.prisma.appointment.update({ where: { id: a.id }, data: { confirmedAt: now, declinedAt: null } })
