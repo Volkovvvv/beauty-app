@@ -1,15 +1,13 @@
 import { useMemo } from 'react'
 import type { Appointment } from '../../../entities/appointment'
-import { clientStats, firstName, initials, visitsLabel, type Client, type ClientCard } from '../../../entities/client'
+import { clientStats, firstName, initials, visitsLabel, type Client } from '../../../entities/client'
 import { useMaster } from '../../../entities/master'
 import type { BookingInitial } from '../../../features/add-appointment'
 import { dayMonth, MONTHS_GEN, monthIndex } from '../../../shared/lib/date'
 import { plural, rub } from '../../../shared/lib/format'
 import type { Now } from '../../../shared/lib/useNow'
-import { Avatar, BottomBar, Button, IconButton, Panel, Screen, SectionHeader, Stack, TextAction, Title } from '../../../shared/ui'
+import { Avatar, BottomBar, Button, IconButton, Panel, Screen, TextAction, Title } from '../../../shared/ui'
 import s from './ClientPage.module.css'
-
-const CARD_FIELDS: ReadonlyArray<[keyof ClientCard, string]> = [['payment', 'Оплата']]
 
 const everyWeeks = (n: number) => (n === 1 ? 'Каждую неделю' : `Каждые ${n} ${plural(n, ['неделю', 'недели', 'недель'])}`)
 
@@ -106,19 +104,14 @@ export default function ClientPage({ client, appointments, now, onBack, onBook, 
           </Panel>
         ) : null}
 
-        <Stack gap={10}>
-          <SectionHeader title="Карточка" />
+        {client.card.payment ? (
           <Panel list>
-            {CARD_FIELDS.map(([key, label]) =>
-              client.card[key] ? (
-                <div key={key} className={s.field}>
-                  <span className={s.fieldKey}>{label}</span>
-                  <span className={s.fieldValue}>{client.card[key]}</span>
-                </div>
-              ) : null
-            )}
+            <div className={s.field}>
+              <span className={s.fieldKey}>Оплата</span>
+              <span className={s.fieldValue}>{client.card.payment}</span>
+            </div>
           </Panel>
-        </Stack>
+        ) : null}
       </Screen>
 
       <BottomBar>
