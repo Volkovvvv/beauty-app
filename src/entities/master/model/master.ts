@@ -32,6 +32,8 @@ export interface Master {
   workday: Workday
   specialties: string[]
   onboarded: boolean
+  /** Имена мастеров, у которых этот человек — клиентка */
+  clientOf: string[]
 }
 
 /** Слова, которые зависят от направлений мастера */

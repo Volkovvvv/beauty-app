@@ -17,7 +17,20 @@ const MASTER_SELECT = {
   workDays: true,
   notifyBeforeHours: true,
   notifyBeforeMinutes: true,
-  user: { select: { firstName: true, lastName: true, username: true, timezone: true } },
+  user: {
+    select: {
+      firstName: true,
+      lastName: true,
+      username: true,
+      timezone: true,
+      // Этот человек — чья-то клиентка: мини-апп не будет сразу звать её в мастера
+      clientCards: {
+        select: { master: { select: { displayName: true, user: { select: { firstName: true } } } } },
+        orderBy: { createdAt: 'asc' },
+        take: 3,
+      },
+    },
+  },
 } satisfies Prisma.MasterSelect
 
 type MasterRow = Prisma.MasterGetPayload<{ select: typeof MASTER_SELECT }>
@@ -42,6 +55,8 @@ export interface MasterView {
   workDays: number[]
   notifyBeforeHours: number
   notifyBeforeMinutes: number
+  /** Имена мастеров, у которых этот человек записан клиенткой */
+  clientOf: string[]
 }
 
 function toView({ user, ...profile }: MasterRow): MasterView {
@@ -50,6 +65,7 @@ function toView({ user, ...profile }: MasterRow): MasterView {
     telegramName: [user.firstName, user.lastName].filter(Boolean).join(' '),
     username: user.username,
     timezone: user.timezone,
+    clientOf: user.clientCards.map((c) => c.master.displayName ?? c.master.user.firstName),
   }
 }
 

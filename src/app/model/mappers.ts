@@ -57,6 +57,7 @@ export interface ApiMaster {
   workDays: number[]
   specialties: string[]
   onboardedAt: string | null
+  clientOf: string[]
 }
 
 /** Ручная правка окон дня: начала часов, минуты от полуночи */
@@ -156,6 +157,7 @@ export const masterFromApi = (m: ApiMaster): Master => ({
   workday: { start: m.dayStart, end: m.dayEnd, days: m.workDays },
   specialties: m.specialties,
   onboarded: m.onboardedAt !== null,
+  clientOf: m.clientOf ?? [],
 })
 
 export const specialtyFromApi = (s: ApiSpecialty): Specialty => ({

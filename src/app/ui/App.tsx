@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { applyTheme, confirmAction, haptic, openChat, shareText, telegramFirstName, tg } from '../../shared/api/telegram'
+import { applyTheme, closeApp, confirmAction, haptic, openChat, shareText, telegramFirstName, tg } from '../../shared/api/telegram'
 import { dayMonth } from '../../shared/lib/date'
 import { useNow } from '../../shared/lib/useNow'
 import { AppShell, Button, EmptyState, TabBar, Toast } from '../../shared/ui'
@@ -42,6 +42,8 @@ export default function App() {
   const [stories, setStories] = useState(false)
   // Знакомство только что пройдено: экран «Всё готово» держим, пока мастер не нажмёт «Открыть приложение»
   const [welcome, setWelcome] = useState(false)
+  // Клиентка мастера сказала, что и сама мастер — показываем знакомство
+  const [beMaster, setBeMaster] = useState(false)
   // Выбранный день в «Записях» живёт здесь: переживает уход на другую вкладку
   const [recordsDate, setRecordsDate] = useState(now.date)
   // Загрузка дольше обычного — подсказываем про сеть, а не молча крутим «Загрузка…»
@@ -121,6 +123,31 @@ export default function App() {
           Загрузка…
           {slowBoot ? ' Долго грузится — проверьте интернет; если включён VPN, попробуйте его выключить.' : null}
         </EmptyState>
+      </AppShell>
+    )
+  }
+
+  // Клиентка открыла приложение через кнопку бота: кабинет мастера ей не нужен.
+  // Если она и сама мастер — пусть скажет об этом явно
+  if (store.master && !store.master.onboarded && store.master.clientOf.length && !beMaster) {
+    return (
+      <AppShell>
+        <EmptyState
+          action={
+            <>
+              <Button variant="dark" size="sm" onClick={() => closeApp() || setToast('Можно закрыть эту вкладку')}>
+                Понятно
+              </Button>
+              <Button variant="soft" size="sm" onClick={() => setBeMaster(true)}>
+                Я тоже мастер
+              </Button>
+            </>
+          }
+        >
+          Вы записаны к мастеру {store.master.clientOf.join(', ')}. Напоминания о записи приходят в чат с ботом — здесь
+          ничего делать не нужно.
+        </EmptyState>
+        <Toast message={toast} onHide={hideToast} />
       </AppShell>
     )
   }

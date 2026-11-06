@@ -14,6 +14,7 @@ interface TelegramWebApp {
   initDataUnsafe?: { user?: { first_name?: string } }
   platform?: string
   ready(): void
+  close(): void
   expand(): void
   setBackgroundColor?(color: string): void
   setHeaderColor?(color: string): void
@@ -89,6 +90,13 @@ export function haptic(type: 'light' | 'medium' | 'heavy' = 'light'): void {
   } catch {
     // не поддерживается — игнорируем
   }
+}
+
+/** Закрыть мини-апп. Вне Telegram закрывать нечего — false */
+export function closeApp(): boolean {
+  if (!tg) return false
+  tg.close()
+  return true
 }
 
 // Подтверждение действия: нативный диалог Telegram, вне его — браузерный
