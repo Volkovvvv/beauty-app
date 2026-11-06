@@ -32,10 +32,12 @@ interface NewAppointmentPageProps {
   /** Новая клиентка из шторки выбора: форма вернёт сюда с её id */
   onAddClient: (state: BookingInitial) => void
   onCancel: () => void
+  /** Отменить переносимую запись (initial.replaceId) */
+  onCancelAppointment?: (id: string) => void
 }
 
 // Новая запись или перенос существующей (initial.replaceId)
-export default function NewAppointmentPage({ services, workday, clients, appointments, now, initial, onSave, onAddClient, onCancel }: NewAppointmentPageProps) {
+export default function NewAppointmentPage({ services, workday, clients, appointments, now, initial, onSave, onAddClient, onCancel, onCancelAppointment }: NewAppointmentPageProps) {
   const { wording } = useMaster()
   const [clientId, setClientId] = useState(initial.clientId ?? null)
   const [selected, setSelected] = useState(() => new Set(initial.serviceIds ?? []))
@@ -294,6 +296,12 @@ export default function NewAppointmentPage({ services, workday, clients, appoint
             onChange={setRebook}
           />
         </Panel>
+
+        {initial.replaceId && onCancelAppointment ? (
+          <button type="button" className={s.cancelVisit} onClick={() => initial.replaceId && onCancelAppointment(initial.replaceId)}>
+            Отменить запись
+          </button>
+        ) : null}
       </Screen>
 
       <BottomBar dark>

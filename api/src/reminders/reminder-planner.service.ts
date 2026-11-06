@@ -6,6 +6,9 @@ import { planRebook, planVisitReminders } from './schedule'
 /** Насколько назад смотреть при перепланировании: дальше «позвать на коррекцию» не ждёт. */
 const REBOOK_HORIZON_MS = 26 * 7 * 86_400_000
 
+/** Напоминания о самом визите — в отличие от REBOOK, привязаны к его времени. */
+const VISIT_KINDS: ReminderKind[] = ['BEFORE_HOURS', 'BEFORE_MINUTES']
+
 /**
  * Планирование напоминаний: когда и какие записи Reminder создать.
  *
@@ -64,9 +67,15 @@ export class ReminderPlanner {
   /**
    * Пересоздаёт напоминания после изменения записи. Уже отправленные не трогаем:
    * из них и состоит защита от повторной отправки.
+   * moved — визит перенесли: отправленные напоминания о визите были про прежнее время,
+   * и без их удаления @@unique не дал бы запланировать такие же к новому.
    */
-  async replanForAppointment(appointmentId: string, now = new Date()): Promise<void> {
-    await this.prisma.reminder.deleteMany({ where: { appointmentId, sentAt: null } })
+  async replanForAppointment(appointmentId: string, now = new Date(), moved = false): Promise<void> {
+    await this.prisma.reminder.deleteMany({
+      where: moved
+        ? { appointmentId, OR: [{ sentAt: null }, { kind: { in: VISIT_KINDS } }] }
+        : { appointmentId, sentAt: null },
+    })
     await this.planForAppointment(appointmentId, now)
   }
 

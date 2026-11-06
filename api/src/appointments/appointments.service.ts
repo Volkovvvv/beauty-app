@@ -1,10 +1,12 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
+import { BotService } from '../bot/bot.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { cancelledText, movedText } from '../reminders/messages'
 import { ReminderPlanner } from '../reminders/reminder-planner.service'
 import type { CreateAppointmentDto, ListAppointmentsDto, UpdateAppointmentDto } from './dto/appointment.dto'
 import { MAX_DURATION_MINUTES, overlaps, type Slot } from './overlap'
-import { buildSnapshot, snapshotMinutes, snapshotPrice, type ServiceSnapshot } from './services-snapshot'
+import { buildSnapshot, snapshotMinutes, snapshotPrice, snapshotTitle, type ServiceSnapshot } from './services-snapshot'
 
 const APPOINTMENT_SELECT = {
   id: true,
@@ -52,6 +54,7 @@ export class AppointmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reminders: ReminderPlanner,
+    private readonly bot: BotService,
   ) {}
 
   async list(masterId: string, query: ListAppointmentsDto): Promise<AppointmentView[]> {
@@ -163,7 +166,11 @@ export class AppointmentsService {
     // Время, статус или переключатели поменялись — прежние напоминания неверны.
     // Правка заметки и оплаты их не касается.
     if (timeChanged || dto.status !== undefined || dto.remind !== undefined || dto.rebook !== undefined) {
-      await this.safeReplan(id)
+      const moved = dto.startsAt !== undefined && new Date(dto.startsAt).getTime() !== current.startsAt.getTime()
+      await this.safeReplan(id, moved)
+      const cancelled = status === 'CANCELLED' && current.status !== 'CANCELLED'
+      if (cancelled) await this.safeNotify(id, { kind: 'cancelled', startsAt: current.startsAt })
+      else if (moved && status === 'PLANNED') await this.safeNotify(id, { kind: 'moved', from: current.startsAt })
     }
     return toView(row)
   }
@@ -210,9 +217,56 @@ export class AppointmentsService {
     if (nearby.some((a) => overlaps(a, slot))) throw new ConflictException('Это время уже занято')
   }
 
-  private async safeReplan(id: string): Promise<void> {
+  /**
+   * Сразу пишет клиентке о переносе или отмене. Только о будущем визите и только
+   * если напоминания по записи включены: выключила мастер — бот молчит и тут.
+   * Ошибки не роняют правку записи: она уже сохранена.
+   */
+  private async safeNotify(
+    id: string,
+    change: { kind: 'moved'; from: Date } | { kind: 'cancelled'; startsAt: Date },
+  ): Promise<void> {
     try {
-      await this.reminders.replanForAppointment(id)
+      const a = await this.prisma.appointment.findUnique({
+        where: { id },
+        select: {
+          startsAt: true,
+          services: true,
+          remind: true,
+          client: { select: { name: true, user: { select: { tgId: true } } } },
+          master: { select: { displayName: true, user: { select: { firstName: true, username: true, timezone: true } } } },
+        },
+      })
+      const tgId = a?.client.user?.tgId
+      const now = new Date()
+      const visit = change.kind === 'moved' ? a?.startsAt : change.startsAt
+      if (!a || !tgId || !a.remind || !visit || visit <= now) return
+
+      const common = {
+        clientName: a.client.name.split(' ')[0],
+        masterName: a.master.displayName ?? a.master.user.firstName,
+        timezone: a.master.user.timezone,
+        now,
+      }
+      const text =
+        change.kind === 'moved'
+          ? movedText({
+              ...common,
+              services: snapshotTitle(a.services as unknown as ServiceSnapshot[]),
+              from: change.from,
+              startsAt: a.startsAt,
+            })
+          : cancelledText({ ...common, masterUsername: a.master.user.username, startsAt: change.startsAt })
+      const result = await this.bot.sendMessage(tgId, text)
+      if (!result.ok) this.logger.warn(`Не удалось сообщить клиентке об изменении записи: ${result.error ?? ''}`)
+    } catch (e) {
+      this.logger.error(`Не удалось сообщить клиентке об изменении записи: ${(e as Error).message}`)
+    }
+  }
+
+  private async safeReplan(id: string, moved = false): Promise<void> {
+    try {
+      await this.reminders.replanForAppointment(id, new Date(), moved)
     } catch (e) {
       this.logger.error(`Не удалось запланировать напоминания: ${(e as Error).message}`)
     }

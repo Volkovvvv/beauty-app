@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { applyTheme, haptic, openChat, shareText, telegramFirstName, tg } from '../../shared/api/telegram'
+import { applyTheme, confirmAction, haptic, openChat, shareText, telegramFirstName, tg } from '../../shared/api/telegram'
 import { dayMonth } from '../../shared/lib/date'
 import { useNow } from '../../shared/lib/useNow'
 import { AppShell, Button, EmptyState, TabBar, Toast } from '../../shared/ui'
@@ -211,6 +211,14 @@ export default function App() {
     )
   }
 
+  const cancelAppointment = async (id: string) => {
+    if (!(await confirmAction('Отменить запись? Бот больше не будет напоминать о ней клиентке.'))) return
+    store.setStatus(id, 'cancelled')
+    haptic('medium')
+    goBack()
+    setToast('Запись отменена')
+  }
+
   const saveClient = async (form: ClientForm, then?: BookingInitial) => {
     const created = await store.addClient(form)
     haptic('medium')
@@ -395,6 +403,7 @@ export default function App() {
           onSave={handleSave}
           onAddClient={(state) => open({ name: 'addClient', then: state })}
           onCancel={goBack}
+          onCancelAppointment={cancelAppointment}
         />
       ) : null}
 

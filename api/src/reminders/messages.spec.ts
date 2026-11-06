@@ -1,4 +1,4 @@
-import { declinedText, rebookText, visitReminderText, whenLabel } from './messages'
+import { cancelledText, declinedText, movedText, rebookText, visitReminderText, whenLabel } from './messages'
 
 const TZ = 'Europe/Moscow'
 const msk = (s: string) => new Date(`${s}+03:00`)
@@ -41,5 +41,30 @@ describe('тексты бота', () => {
     expect(declinedText('Алина Морозова', msk('2026-10-22T12:00:00'), TZ, msk('2026-10-21T20:00:00'))).toBe(
       'Алина Морозова не сможет прийти завтра в 12:00 мск.\nЗапись осталась в расписании — перенесите или отмените её в приложении.',
     )
+  })
+
+  it('перенос — новое и прежнее время', () => {
+    const text = movedText({
+      clientName: 'Алина',
+      masterName: 'Вика',
+      services: 'Коррекция',
+      from: msk('2026-10-22T12:00:00'),
+      startsAt: msk('2026-10-24T10:00:00'),
+      timezone: TZ,
+      now: msk('2026-10-21T12:00:00'),
+    })
+    expect(text).toBe('Алина, запись перенесена на 24 октября в 10:00 мск: коррекция.\nРаньше было завтра в 12:00 мск. Мастер — Вика.')
+  })
+
+  it('отмена — с контактом мастера', () => {
+    const text = cancelledText({
+      clientName: 'Алина',
+      masterName: 'Вика',
+      masterUsername: 'vika_nails',
+      startsAt: msk('2026-10-22T12:00:00'),
+      timezone: TZ,
+      now: msk('2026-10-21T12:00:00'),
+    })
+    expect(text).toBe('Алина, запись завтра в 12:00 мск отменена. Мастер — Вика.\nЗаписаться на другое время: @vika_nails')
   })
 })

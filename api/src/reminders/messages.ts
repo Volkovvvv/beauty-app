@@ -76,3 +76,32 @@ export function declinedText(clientName: string, startsAt: Date, timezone: strin
     'Запись осталась в расписании — перенесите или отмените её в приложении.'
   )
 }
+
+/** Клиентке — мастер перенёс визит. Прежнее время рядом, чтобы не перепутала. */
+export function movedText(opts: {
+  clientName: string
+  masterName: string
+  services: string
+  from: Date
+  startsAt: Date
+  timezone: string
+  now: Date
+}): string {
+  return (
+    `${opts.clientName}, запись перенесена на ${whenLabel(opts.startsAt, opts.timezone, opts.now)}: ${opts.services.toLowerCase()}.\n` +
+    `Раньше было ${whenLabel(opts.from, opts.timezone, opts.now)}. Мастер — ${opts.masterName}.`
+  )
+}
+
+/** Клиентке — мастер отменил визит. */
+export function cancelledText(opts: {
+  clientName: string
+  masterName: string
+  masterUsername: string | null
+  startsAt: Date
+  timezone: string
+  now: Date
+}): string {
+  const contact = opts.masterUsername ? `Записаться на другое время: @${opts.masterUsername}` : 'Напишите мастеру, чтобы выбрать другое время.'
+  return `${opts.clientName}, запись ${whenLabel(opts.startsAt, opts.timezone, opts.now)} отменена. Мастер — ${opts.masterName}.\n${contact}`
+}

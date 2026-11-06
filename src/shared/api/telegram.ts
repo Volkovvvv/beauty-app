@@ -21,6 +21,8 @@ interface TelegramWebApp {
   /** Bot API 7.8+: публикация сторис по публичной https-ссылке на картинку */
   shareToStory?(mediaUrl: string, params?: { text?: string }): void
   isVersionAtLeast?(version: string): boolean
+  /** Bot API 6.2+: нативный диалог «ОК / Отмена» */
+  showConfirm?(message: string, cb: (ok: boolean) => void): void
   HapticFeedback?: { impactOccurred(style: 'light' | 'medium' | 'heavy'): void }
   BackButton?: TelegramBackButton
 }
@@ -87,6 +89,20 @@ export function haptic(type: 'light' | 'medium' | 'heavy' = 'light'): void {
   } catch {
     // не поддерживается — игнорируем
   }
+}
+
+// Подтверждение действия: нативный диалог Telegram, вне его — браузерный
+export function confirmAction(message: string): Promise<boolean> {
+  if (tg?.showConfirm && tg.isVersionAtLeast?.('6.2')) {
+    return new Promise((resolve) => {
+      try {
+        tg?.showConfirm?.(message, resolve)
+      } catch {
+        resolve(window.confirm(message))
+      }
+    })
+  }
+  return Promise.resolve(window.confirm(message))
 }
 
 /**
