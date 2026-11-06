@@ -43,12 +43,6 @@
   color: var(--muted);
 }
 
-.photos {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
 .field {
   display: flex;
   justify-content: space-between;

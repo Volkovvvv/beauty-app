@@ -418,7 +418,6 @@ export default function App() {
           }
           onWrite={write}
           onInvite={invite}
-          onAddPhoto={store.addPhoto}
           onEdit={(c) => open({ name: 'editClient', id: c.id })}
         />
       ) : null}

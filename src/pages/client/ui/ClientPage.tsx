@@ -1,12 +1,12 @@
-import { useMemo, useRef, type ChangeEvent } from 'react'
+import { useMemo } from 'react'
 import type { Appointment } from '../../../entities/appointment'
-import { clientStats, firstName, initials, visitsLabel, WorkPhotoTile, type Client, type ClientCard } from '../../../entities/client'
+import { clientStats, firstName, initials, visitsLabel, type Client, type ClientCard } from '../../../entities/client'
 import { useMaster } from '../../../entities/master'
 import type { BookingInitial } from '../../../features/add-appointment'
 import { dayMonth, MONTHS_GEN, monthIndex } from '../../../shared/lib/date'
 import { plural, rub } from '../../../shared/lib/format'
 import type { Now } from '../../../shared/lib/useNow'
-import { Avatar, BottomBar, Button, EmptyState, IconButton, Panel, Screen, SectionHeader, Stack, TextAction, Title } from '../../../shared/ui'
+import { Avatar, BottomBar, Button, IconButton, Panel, Screen, SectionHeader, Stack, TextAction, Title } from '../../../shared/ui'
 import s from './ClientPage.module.css'
 
 const CARD_FIELDS: ReadonlyArray<[keyof ClientCard, string]> = [['payment', 'Оплата']]
@@ -22,13 +22,11 @@ interface ClientPageProps {
   onReschedule: (appointment: Appointment) => void
   onWrite: (client: Client) => void
   onInvite: (client: Client) => void
-  onAddPhoto: (clientId: string, file: File) => void
   onEdit: (client: Client) => void
 }
 
 // Карточка клиентки: ближайшая запись, фото работ и заметки мастера
-export default function ClientPage({ client, appointments, now, onBack, onBook, onReschedule, onWrite, onInvite, onAddPhoto, onEdit }: ClientPageProps) {
-  const fileRef = useRef<HTMLInputElement>(null)
+export default function ClientPage({ client, appointments, now, onBack, onBook, onReschedule, onWrite, onInvite, onEdit }: ClientPageProps) {
   const { wording } = useMaster()
   const stats = useMemo(
     () => clientStats(client, appointments.filter((a) => a.clientId === client.id), now),
@@ -39,12 +37,6 @@ export default function ClientPage({ client, appointments, now, onBack, onBook, 
     stats.visits && stats.since
       ? `Ходит с ${MONTHS_GEN[monthIndex(stats.since)]} · ${visitsLabel(stats.visits)} · ${rub(stats.total)}`
       : 'Новая клиентка'
-
-  const addPhoto = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (file) onAddPhoto(client.id, file)
-  }
 
   const rebook = () => onBook({ clientId: client.id, serviceIds: stats.lastServiceIds })
 
@@ -113,20 +105,6 @@ export default function ClientPage({ client, appointments, now, onBack, onBook, 
             </Button>
           </Panel>
         ) : null}
-
-        <Stack gap={10}>
-          <SectionHeader title="Работы" aside={<TextAction onClick={() => fileRef.current?.click()}>+ Фото</TextAction>} />
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={addPhoto} />
-          {client.photos.length ? (
-            <div className={s.photos}>
-              {client.photos.map((p) => (
-                <WorkPhotoTile key={p.id} clientId={client.id} photo={p} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState>Сюда попадут фото работ — удобно повторить, что понравилось</EmptyState>
-          )}
-        </Stack>
 
         <Stack gap={10}>
           <SectionHeader title="Карточка" />
