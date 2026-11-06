@@ -104,7 +104,7 @@ export default function ClientsPage({ clients, appointments, now, onOpen, onBook
           <EmptyState>Никого не нашли</EmptyState>
         ) : (
           <EmptyState action={<Button variant="dark" size="sm" onClick={onAdd}>Добавить клиентку</Button>}>
-            Здесь будут ваши клиентки — с историей визитов и фото работ
+            Здесь будут ваши клиентки — с историей визитов
           </EmptyState>
         )}
       </Stack>

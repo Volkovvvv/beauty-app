@@ -25,7 +25,7 @@ interface ClientPageProps {
   onEdit: (client: Client) => void
 }
 
-// Карточка клиентки: ближайшая запись, фото работ и заметки мастера
+// Карточка клиентки: ближайшая запись и заметки мастера
 export default function ClientPage({ client, appointments, now, onBack, onBook, onReschedule, onWrite, onInvite, onEdit }: ClientPageProps) {
   const { wording } = useMaster()
   const stats = useMemo(
