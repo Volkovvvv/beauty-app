@@ -58,6 +58,12 @@ export class UpdateMasterDto {
   @Max(168)
   notifyBeforeHours?: number
 
+  /** Часовой пояс IANA: «Europe/Moscow». В нём время записей и напоминаний */
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  timezone?: string
+
   /** Второе напоминание за N минут. 0 — выключено. */
   @IsOptional()
   @IsInt()

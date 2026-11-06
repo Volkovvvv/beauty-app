@@ -4,7 +4,7 @@ import type { Appointment, AppointmentDraft, AppointmentStatus } from '../../ent
 import type { Client } from '../../entities/client'
 import type { Master, Specialty } from '../../entities/master'
 import type { WindowEdit, WindowEdits } from '../../features/story-windows'
-import type { ISODate } from '../../shared/lib/date'
+import { setTimeZone, type ISODate } from '../../shared/lib/date'
 import { api, getAll, login } from '../../shared/api/client'
 import { haptic } from '../../shared/api/telegram'
 import { newId } from '../../shared/lib/id'
@@ -39,6 +39,7 @@ export interface MasterPatch {
   instagram?: string
   specialties?: string[]
   workDays?: number[]
+  timezone?: string
 }
 
 export interface Store {
@@ -141,6 +142,8 @@ export function useStore(): Store {
       )
       .then(([m, s, c, a, catalog]) => {
         if (cancelled) return
+        // До разбора записей: их дата и время считаются в поясе мастера
+        setTimeZone(m.timezone)
         setMaster(masterFromApi(m))
         setSpecialties(catalog.map(specialtyFromApi))
         setServices(s.map(serviceFromApi))
@@ -304,6 +307,11 @@ export function useStore(): Store {
   // Ждёт ответа: экран показывает ошибку у полей (например, неверный ник Instagram)
   const updateMaster = useCallback(async (patch: MasterPatch) => {
     const saved = await api.patch<ApiMaster>('/master', patch)
+    if (patch.timezone) {
+      // Новый пояс — те же моменты визитов ложатся на другие часы: разбираем записи заново
+      setTimeZone(saved.timezone)
+      setAppointments((await getAll<ApiAppointment>('/appointments')).map(appointmentFromApi))
+    }
     setMaster(masterFromApi(saved))
   }, [])
 

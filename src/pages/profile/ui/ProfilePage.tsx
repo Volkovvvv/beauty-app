@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useMaster, type Specialty } from '../../../entities/master'
 import { SpecialtyPicker } from '../../../features/onboarding'
 import { cx } from '../../../shared/lib/cx'
-import { fromMinutes, WEEKDAYS } from '../../../shared/lib/date'
+import { deviceTimeZone, fromMinutes, WEEKDAYS } from '../../../shared/lib/date'
 import { count } from '../../../shared/lib/format'
 import { INSTAGRAM_ERROR, instagramHandle } from '../../../shared/lib/instagram'
-import { Avatar, BottomBar, Button, IconButton, Panel, Screen, Stack, TextField, Title } from '../../../shared/ui'
+import { zoneLabel, zoneOptions } from '../../../shared/lib/zones'
+import { Avatar, BottomBar, Button, IconButton, Panel, Screen, Stack, TextAction, TextField, Title } from '../../../shared/ui'
 import { initials } from '../../../entities/client'
 import s from './ProfilePage.module.css'
 
@@ -14,7 +15,7 @@ interface ProfilePageProps {
   servicesCount: number
   /** Сколько услуг скрыто из онлайн-записи */
   hiddenCount: number
-  onSave: (patch: { displayName: string; address: string; instagram: string; specialties: string[]; workDays: number[] }) => Promise<void>
+  onSave: (patch: { displayName: string; address: string; instagram: string; specialties: string[]; workDays: number[]; timezone?: string }) => Promise<void>
   onOpenServices: () => void
   onOpenBooking: () => void
   onBack: () => void
@@ -30,6 +31,8 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
   const [instagram, setInstagram] = useState(master.instagram ? `@${master.instagram}` : '')
   const [picked, setPicked] = useState(master.specialties)
   const [workDays, setWorkDays] = useState<readonly number[]>(master.workday.days)
+  const [timezone, setTimezone] = useState(master.timezone)
+  const device = deviceTimeZone()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -39,7 +42,8 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
     address.trim() !== (master.address ?? '') ||
     (handle ?? instagram) !== (master.instagram ?? '') ||
     !same(picked, master.specialties) ||
-    !same(workDays, master.workday.days)
+    !same(workDays, master.workday.days) ||
+    timezone !== master.timezone
   const ready = changed && name.trim().length > 0 && picked.length > 0 && handle !== null && !saving
 
   const toggleDay = (day: number) =>
@@ -49,7 +53,7 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
     if (!ready) return
     setSaving(true)
     setError('')
-    onSave({ displayName: name.trim(), address: address.trim(), instagram: handle ?? '', specialties: picked, workDays: [...workDays] })
+    onSave({ displayName: name.trim(), address: address.trim(), instagram: handle ?? '', specialties: picked, workDays: [...workDays], ...(timezone !== master.timezone ? { timezone } : {}) })
       .catch((e: Error) => setError(e.message))
       .finally(() => setSaving(false))
   }
@@ -107,6 +111,25 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
               ? 'В выходные нет слотов записи и окошек для сторис — записать клиентку можно на своё время'
               : 'Ни одного рабочего дня — окошки для сторис можно добавить только вручную'}
           </span>
+        </Stack>
+
+        <Stack gap={10}>
+          <span className={s.label}>Часовой пояс</span>
+          <select className={s.zone} value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+            {zoneOptions(master.timezone, device).map((z) => (
+              <option key={z.value} value={z.value}>
+                {z.label}
+              </option>
+            ))}
+          </select>
+          {device && device !== timezone && device !== master.timezone ? (
+            <span className={s.sub}>
+              На телефоне сейчас {zoneLabel(device)}. Записи показаны по времени пояса выше.{' '}
+              <TextAction onClick={() => setTimezone(device)}>Переехала — переключить</TextAction>
+            </span>
+          ) : (
+            <span className={s.sub}>В нём время записей и напоминаний клиенткам — в поездке ничего не съедет</span>
+          )}
         </Stack>
 
         <Panel list>

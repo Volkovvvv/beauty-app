@@ -23,7 +23,67 @@ export function fromISO(iso: ISODate): Date {
   return new Date(y, m - 1, d)
 }
 
-export const todayISO = (): ISODate => toISO(new Date())
+// ─── Часовой пояс мастера ─────────────────────────────────────────────
+// Записи живут во времени мастера, а не телефона: открыла приложение
+// в поездке — «12:00» должно остаться 12:00 у неё в городе.
+
+/** undefined — пояс устройства (пока профиль мастера не загружен) */
+let zone: string | undefined
+
+/** Задаёт пояс мастера. Неизвестный Intl пояс игнорируется — остаётся пояс устройства */
+export function setTimeZone(tz: string | null | undefined): void {
+  if (!tz) return
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz })
+    zone = tz
+    formatter = null
+  } catch {
+    // старый браузер не знает пояс — живём в поясе устройства
+  }
+}
+
+/** Пояс устройства: подсказать мастеру, что она не дома */
+export function deviceTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+  } catch {
+    return undefined
+  }
+}
+
+let formatter: Intl.DateTimeFormat | null = null
+
+/** Дата и минуты момента в поясе мастера */
+export function zoned(d: Date): { date: ISODate; minutes: number } {
+  formatter ??= new Intl.DateTimeFormat('en-CA', {
+    timeZone: zone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  })
+  const p: Record<string, string> = {}
+  for (const part of formatter.formatToParts(d)) p[part.type] = part.value
+  return { date: `${p.year}-${p.month}-${p.day}`, minutes: Number(p.hour) * 60 + Number(p.minute) }
+}
+
+/** Момент, когда в поясе мастера наступают date и minutes */
+export function fromZoned(date: ISODate, minutes: number): Date {
+  const [y, m, d] = date.split('-').map(Number)
+  const wall = Date.UTC(y, m - 1, d, 0, minutes)
+  // Смещение пояса: настенное время минус UTC. Второй проход — на случай перевода часов
+  const offset = (t: number) => {
+    const z = zoned(new Date(t))
+    const [zy, zm, zd] = z.date.split('-').map(Number)
+    return Date.UTC(zy, zm - 1, zd, 0, z.minutes) - Math.floor(t / 60_000) * 60_000
+  }
+  const first = wall - offset(wall)
+  return new Date(wall - offset(first))
+}
+
+export const todayISO = (): ISODate => zoned(new Date()).date
 
 export function addDays(iso: ISODate, n: number): ISODate {
   const d = fromISO(iso)
@@ -49,7 +109,7 @@ export function toMinutes(time: Time): number {
 export const fromMinutes = (m: number): Time => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`
 
 export function nowMinutes(d = new Date()): number {
-  return d.getHours() * 60 + d.getMinutes()
+  return zoned(d).minutes
 }
 
 /** «22 октября» */

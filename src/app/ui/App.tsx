@@ -36,7 +36,7 @@ const MONTHS_AHEAD = 2
 
 export default function App() {
   const store = useStore()
-  const now = useNow()
+  const now = useNow(store.master?.timezone)
   const [view, setView] = useState<View>({ name: 'today' })
   const [toast, setToast] = useState('')
   const [stories, setStories] = useState(false)

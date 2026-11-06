@@ -5,7 +5,7 @@ import type { Appointment, AppointmentDraft, AppointmentStatus } from '../../ent
 import type { Client, ClientCard, InviteStatus } from '../../entities/client'
 import type { Master, Specialty } from '../../entities/master'
 import type { Service } from '../../entities/service'
-import { toISO, type ISODate, type Time } from '../../shared/lib/date'
+import { fromMinutes, fromZoned, toMinutes, zoned, type ISODate, type Time } from '../../shared/lib/date'
 
 export interface ApiService {
   id: string
@@ -58,6 +58,7 @@ export interface ApiMaster {
   specialties: string[]
   onboardedAt: string | null
   clientOf: string[]
+  timezone: string
 }
 
 /** Ручная правка окон дня: начала часов, минуты от полуночи */
@@ -80,16 +81,14 @@ export interface ApiSpecialty {
 const rub = (kopecks: number) => Math.round(kopecks / 100)
 const kop = (rubles: number) => Math.round(rubles * 100)
 
-const pad = (n: number) => String(n).padStart(2, '0')
-
-/** Момент начала → дата и время в поясе устройства: мастер ставит записи в своём времени */
+/** Момент начала → дата и время в поясе мастера */
 function splitStartsAt(iso: string): { date: ISODate; start: Time } {
-  const d = new Date(iso)
-  return { date: toISO(d), start: `${pad(d.getHours())}:${pad(d.getMinutes())}` }
+  const z = zoned(new Date(iso))
+  return { date: z.date, start: fromMinutes(z.minutes) }
 }
 
-/** Дата и время без зоны трактуются как местные — это и нужно */
-export const startsAtToApi = (date: ISODate, start: Time): string => new Date(`${date}T${start}:00`).toISOString()
+/** Дата и время в поясе мастера → момент */
+export const startsAtToApi = (date: ISODate, start: Time): string => fromZoned(date, toMinutes(start)).toISOString()
 
 const INVITE: Record<ApiClient['inviteStatus'], InviteStatus> = { NONE: 'none', INVITED: 'invited', ACCEPTED: 'accepted' }
 
@@ -158,6 +157,7 @@ export const masterFromApi = (m: ApiMaster): Master => ({
   specialties: m.specialties,
   onboarded: m.onboardedAt !== null,
   clientOf: m.clientOf ?? [],
+  timezone: m.timezone,
 })
 
 export const specialtyFromApi = (s: ApiSpecialty): Specialty => ({

@@ -69,6 +69,16 @@ function toView({ user, ...profile }: MasterRow): MasterView {
   }
 }
 
+/** Пояс, который знает Intl: иначе бот не сможет написать время */
+function validTimezone(raw: string): boolean {
+  try {
+    new Intl.DateTimeFormat('ru-RU', { timeZone: raw })
+    return true
+  } catch {
+    return false
+  }
+}
+
 // Порядок выбора сохраняем, повторы отбрасываем: первая — «основная»
 const uniq = <T>(list: readonly T[]): T[] => [...new Set(list)]
 
@@ -109,7 +119,8 @@ export class MastersService {
       throw new BadRequestException('Рабочий день должен заканчиваться позже, чем начинается')
     }
 
-    const { displayName, address, instagram, specialties, workDays, ...rest } = dto
+    const { displayName, address, instagram, specialties, workDays, timezone, ...rest } = dto
+    if (timezone !== undefined && !validTimezone(timezone)) throw new BadRequestException('Неизвестный часовой пояс')
     // Сферы меняют подписи и подсказки, но не услуги: прайс мастер правит сам
     const row = await this.prisma.master.update({
       where: { id: masterId },
@@ -121,12 +132,15 @@ export class MastersService {
         instagram: instagramOf(instagram),
         ...(specialties ? { specialties: uniq(specialties) } : {}),
         ...(workDays ? { workDays: uniq(workDays).sort((x, y) => x - y) } : {}),
+        // Пояс хранится у пользователя: в нём же бот пишет время клиенткам
+        ...(timezone !== undefined ? { user: { update: { timezone } } } : {}),
       },
       select: MASTER_SELECT,
     })
 
-    // Сменились интервалы напоминаний — уже поставленные визиты должны о них узнать
-    if (dto.notifyBeforeHours !== undefined || dto.notifyBeforeMinutes !== undefined) {
+    // Сменились интервалы или пояс — уже поставленные визиты должны о них узнать:
+    // тихие часы считаются в поясе мастера
+    if (dto.notifyBeforeHours !== undefined || dto.notifyBeforeMinutes !== undefined || timezone !== undefined) {
       await this.reminders.replanForMaster(masterId)
     }
     return toView(row)

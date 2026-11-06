@@ -8,7 +8,7 @@ interface MasterContextValue {
 }
 
 const FALLBACK: MasterContextValue = {
-  master: { name: 'мастер', telegramName: '', username: null, address: null, instagram: null, workday: DEFAULT_WORKDAY, specialties: [], onboarded: true, clientOf: [] },
+  master: { name: 'мастер', telegramName: '', username: null, address: null, instagram: null, workday: DEFAULT_WORKDAY, specialties: [], onboarded: true, clientOf: [], timezone: 'Europe/Moscow' },
   wording: { cardLabel: 'Особенности', correction: false },
 }
 

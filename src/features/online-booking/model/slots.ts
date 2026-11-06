@@ -1,6 +1,6 @@
 import { dayAppointments, isBusy, type Appointment, type Workday } from '../../../entities/appointment'
 import { monthDay, type WindowEdits } from '../../story-windows'
-import { addDays, type ISODate } from '../../../shared/lib/date'
+import { addDays, fromZoned, type ISODate } from '../../../shared/lib/date'
 import type { Now } from '../../../shared/lib/useNow'
 
 // Записаться онлайн можно на месяц вперёд
@@ -39,7 +39,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export function calendarFile(date: ISODate, start: number, minutes: number, title: string, location: string): Blob {
   const stamp = (d: Date) =>
     `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
-  const from = new Date(`${date}T${pad(Math.floor(start / 60))}:${pad(start % 60)}:00`)
+  const from = fromZoned(date, start)
   const to = new Date(from.getTime() + minutes * 60_000)
   // Запятые и точки с запятой в тексте .ics экранируются
   const esc = (s: string) => s.replace(/[\\,;]/g, (c) => `\\${c}`).replace(/\n/g, '\\n')

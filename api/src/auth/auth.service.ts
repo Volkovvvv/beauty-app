@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
-import { ReminderPlanner } from '../reminders/reminder-planner.service'
 import { InitDataError, verifyInitData } from '../telegram/init-data'
 import type { JwtPayload } from './auth.types'
 
@@ -39,7 +38,6 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-    private readonly reminders: ReminderPlanner,
     config: ConfigService,
   ) {
     this.botToken = config.getOrThrow<string>('BOT_TOKEN')
@@ -67,39 +65,31 @@ export class AuthService {
     const timezone = validTimezone(timezoneRaw)
 
     // Транзакция: пользователь и кабинет создаются вместе либо никак.
-    const { user, master, zoneChanged } = await this.prisma.$transaction(async (tx) => {
-      const before = await tx.user.findUnique({ where: { tgId: BigInt(tg.id) }, select: { timezone: true } })
+    const { user, master } = await this.prisma.$transaction(async (tx) => {
       const profile = {
         firstName: tg.firstName,
         lastName: tg.lastName ?? null,
         username: tg.username ?? null,
         photoUrl: tg.photoUrl ?? null,
         lastSeenAt: new Date(),
-        ...(timezone ? { timezone } : {}),
       }
       const user = await tx.user.upsert({
         where: { tgId: BigInt(tg.id) },
-        // Профиль в Telegram мог измениться с прошлого входа.
+        // Профиль в Telegram мог измениться с прошлого входа. Таймзону не трогаем:
+        // мастер в поездке открыл приложение — визиты дома не должны сдвинуться.
+        // Меняется она только явно, в профиле
         update: profile,
-        create: { tgId: BigInt(tg.id), ...profile },
+        create: { tgId: BigInt(tg.id), ...profile, ...(timezone ? { timezone } : {}) },
       })
 
       // Кабинет создаётся при первом входе пустым: сферы и услуги мастер
       // вносит при знакомстве (MastersService.onboard)
       const master = await tx.master.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } })
 
-      return { user, master, zoneChanged: before !== null && before.timezone !== user.timezone }
+      return { user, master }
     })
 
     if (master.bannedAt) throw new ForbiddenException('Доступ к кабинету закрыт')
-
-    // Тихие часы считаются в таймзоне мастера: сменилась — уже запланированные
-    // напоминания могли прийтись на ночь. Вход этого не ждёт.
-    if (zoneChanged) {
-      void this.reminders
-        .replanForMaster(master.id)
-        .catch((e: Error) => this.logger.error(`Напоминания после смены таймзоны не перепланированы: ${e.message}`))
-    }
 
     this.logger.log(`Вход: user=${user.id}`)
     const payload: JwtPayload = { sub: user.id, mid: master.id }
