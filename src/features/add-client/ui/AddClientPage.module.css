@@ -9,3 +9,15 @@
   font-weight: 600;
   color: var(--danger);
 }
+
+.remove {
+  align-self: center;
+  padding: 12px 16px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--danger);
+  cursor: pointer;
+}

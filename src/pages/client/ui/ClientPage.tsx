@@ -23,10 +23,11 @@ interface ClientPageProps {
   onWrite: (client: Client) => void
   onInvite: (client: Client) => void
   onAddPhoto: (clientId: string, file: File) => void
+  onEdit: (client: Client) => void
 }
 
 // Карточка клиентки: ближайшая запись, фото работ и заметки мастера
-export default function ClientPage({ client, appointments, now, onBack, onBook, onReschedule, onWrite, onInvite, onAddPhoto }: ClientPageProps) {
+export default function ClientPage({ client, appointments, now, onBack, onBook, onReschedule, onWrite, onInvite, onAddPhoto, onEdit }: ClientPageProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const { wording } = useMaster()
   const stats = useMemo(
@@ -52,6 +53,7 @@ export default function ClientPage({ client, appointments, now, onBack, onBook, 
       <Screen>
         <div className={s.top}>
           <IconButton label="Назад" onClick={onBack}>‹</IconButton>
+          <TextAction onClick={() => onEdit(client)}>Изменить</TextAction>
         </div>
 
         <div className={s.hero}>

@@ -63,6 +63,10 @@ export interface Store {
   updateService: (id: string, service: Omit<Service, 'id'>) => void
   removeService: (id: string) => void
   addClient: (input: ClientInput) => Promise<Client>
+  /** Ждут ответа: ошибку показывает форма */
+  updateClient: (id: string, input: ClientInput) => Promise<void>
+  /** Вместе с её записями и фото */
+  removeClient: (id: string) => Promise<void>
   /** Ручные правки окон для сторис на месяц, по дням */
   windowEdits: WindowEdits
   loadWindowEdits: (from: ISODate, to: ISODate) => void
@@ -350,6 +354,20 @@ export function useStore(): Store {
     return saved
   }, [])
 
+  const updateClient = useCallback(async (id: string, input: ClientInput) => {
+    // Пустое поле — стереть: сервер превратит пустую строку в null
+    const saved = clientFromApi(
+      await api.patch<ApiClient>(`/clients/${id}`, { name: input.name, repeatWeeks: input.repeatWeeks, payment: input.payment ?? '' })
+    )
+    setClients(patchItem<Client>(id, saved))
+  }, [])
+
+  const removeClient = useCallback(async (id: string) => {
+    await api.delete(`/clients/${id}`)
+    setClients((list) => list.filter((c) => c.id !== id))
+    setAppointments((list) => list.filter((a) => a.clientId !== id))
+  }, [])
+
   // Правки окон нужны только экрану месяца — грузятся, когда он открыт
   const loadWindowEdits = useCallback((from: ISODate, to: ISODate) => {
     api
@@ -409,6 +427,8 @@ export function useStore(): Store {
     updateService,
     removeService,
     addClient,
+    updateClient,
+    removeClient,
     windowEdits,
     loadWindowEdits,
     saveWindowEdits,

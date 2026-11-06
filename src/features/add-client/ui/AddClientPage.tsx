@@ -12,18 +12,22 @@ export interface ClientForm {
 
 interface AddClientPageProps {
   catalog: readonly Specialty[]
+  /** Правка существующей карточки; не задана — новая клиентка */
+  initial?: ClientForm
   onSave: (form: ClientForm) => Promise<void>
   onCancel: () => void
+  /** Только для правки: удалить клиентку. Подтверждение — на стороне вызывающего */
+  onRemove?: () => Promise<void>
 }
 
 const weeks = (n: number) => `раз в ${n === 1 ? 'неделю' : `${n} ${plural(n, ['неделю', 'недели', 'недель'])}`}`
 
-// Новая клиентка: имя обязательно, остальное — если мастер знает сразу
-export default function AddClientPage({ catalog, onSave, onCancel }: AddClientPageProps) {
+// Новая клиентка или правка карточки: имя обязательно, остальное — если мастер знает
+export default function AddClientPage({ catalog, initial, onSave, onCancel, onRemove }: AddClientPageProps) {
   const { master } = useMaster()
   // Интервал по умолчанию — обычный для основного направления мастера
   const usual = catalog.find((sp) => sp.id === master.specialties[0])?.repeatWeeks ?? 4
-  const [form, setForm] = useState<ClientForm>({ name: '', repeatWeeks: usual })
+  const [form, setForm] = useState<ClientForm>(initial ?? { name: '', repeatWeeks: usual })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -45,12 +49,22 @@ export default function AddClientPage({ catalog, onSave, onCancel }: AddClientPa
     })
   }
 
+  const remove = () => {
+    if (!onRemove || saving) return
+    setSaving(true)
+    setError('')
+    onRemove().catch((e: Error) => {
+      setError(e.message)
+      setSaving(false)
+    })
+  }
+
   return (
     <>
       <Screen>
         <div className={s.header}>
           <IconButton label="Назад" variant="white" onClick={onCancel}>‹</IconButton>
-          <Title size="lg">Новая клиентка</Title>
+          <Title size="lg">{initial ? 'Карточка клиентки' : 'Новая клиентка'}</Title>
         </div>
 
         <TextField label="Имя" value={form.name} onChange={set('name')} placeholder="Алина Морозова" maxLength={100} autoFocus />
@@ -66,6 +80,12 @@ export default function AddClientPage({ catalog, onSave, onCancel }: AddClientPa
         />
 
         {error ? <span className={s.error}>{error}</span> : null}
+
+        {onRemove ? (
+          <button type="button" className={s.remove} disabled={saving} onClick={remove}>
+            Удалить клиентку
+          </button>
+        ) : null}
       </Screen>
 
       <BottomBar>

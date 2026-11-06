@@ -230,6 +230,7 @@ export default function App() {
   }
 
   const client = view.name === 'client' ? clientById.get(view.id) : undefined
+  const editing = view.name === 'editClient' ? clientById.get(view.id) : undefined
 
   const screens = (
     <AppShell>
@@ -391,6 +392,7 @@ export default function App() {
           onWrite={write}
           onInvite={invite}
           onAddPhoto={store.addPhoto}
+          onEdit={(c) => open({ name: 'editClient', id: c.id })}
         />
       ) : null}
 
@@ -411,6 +413,34 @@ export default function App() {
 
       {view.name === 'addClient' ? (
         <AddClientPage catalog={store.specialties} onSave={(form) => saveClient(form, view.then)} onCancel={goBack} />
+      ) : null}
+
+      {editing ? (
+        <AddClientPage
+          key={editing.id}
+          catalog={store.specialties}
+          initial={{ name: editing.name, payment: editing.card.payment, repeatWeeks: editing.repeatWeeks }}
+          onSave={(form) =>
+            store.updateClient(editing.id, form).then(() => {
+              haptic('medium')
+              goBack()
+              setToast('Сохранено')
+            })
+          }
+          onRemove={async () => {
+            const visits = store.appointments.filter((a) => a.clientId === editing.id && a.status !== 'cancelled').length
+            const question = visits
+              ? `Удалить ${editing.name} вместе с записями (${visits}) и фото? Вернуть не получится.`
+              : `Удалить ${editing.name}? Вернуть не получится.`
+            if (!(await confirmAction(question))) return
+            await store.removeClient(editing.id)
+            haptic('medium')
+            // Карточки больше нет — возвращаемся туда, откуда её открывали
+            setView((current) => current.prev?.prev ?? { name: 'clients' })
+            setToast('Клиентка удалена')
+          }}
+          onCancel={goBack}
+        />
       ) : null}
 
       {view.name === 'profile' ? (

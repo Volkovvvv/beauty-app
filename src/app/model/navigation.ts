@@ -19,6 +19,7 @@ export type View = (
   | { name: 'monthStories'; month: ISODate }
   // then — вернуться в запись с новой клиенткой, если её добавляли из шторки выбора
   | { name: 'addClient'; then?: BookingInitial }
+  | { name: 'editClient'; id: string }
 ) & { prev?: View }
 
 export const TABS: readonly TabItem<TabName>[] = [
