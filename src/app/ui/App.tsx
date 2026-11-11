@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { api } from '../../shared/api/client'
 import { applyTheme, closeApp, confirmAction, haptic, openChat, shareText, telegramFirstName, tg } from '../../shared/api/telegram'
 import { dayMonth } from '../../shared/lib/date'
 import { useNow } from '../../shared/lib/useNow'
@@ -477,6 +478,7 @@ export default function App() {
           onSave={(patch) => store.updateMaster(patch).then(() => setToast('Сохранено'))}
           onOpenServices={() => open({ name: 'services' })}
           onOpenBooking={() => open({ name: 'bookingPreview' })}
+          onExport={() => api.post('/master/export').then(() => setToast('Файлы отправлены в чат с ботом'))}
           onBack={goBack}
         />
       ) : null}

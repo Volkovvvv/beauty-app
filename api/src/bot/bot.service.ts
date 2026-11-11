@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Bot, GrammyError, HttpError, InlineKeyboard } from 'grammy'
+import { Bot, GrammyError, HttpError, InlineKeyboard, InputFile } from 'grammy'
 import { InvitesService } from '../invites/invites.service'
 import { parseAnswerData } from './answer-data'
 import { AnswersService } from './answers.service'
@@ -136,6 +136,21 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         // 403 — заблокировала бота или удалила чат
         return { ok: false, blocked: e.error_code === 403, error: e.description }
       }
+      return { ok: false, error: (e as Error).message }
+    }
+  }
+
+  /** Файл в чат. Как и sendMessage, не бросает исключений. */
+  async sendDocument(tgId: bigint, filename: string, content: string, caption?: string): Promise<SendResult> {
+    if (this.mode === 'off') {
+      this.logger.debug(`BOT_MODE=off, файл ${filename} для ${tgId} не отправлен`)
+      return { ok: false, error: 'BOT_MODE=off' }
+    }
+    try {
+      await this.bot.api.sendDocument(Number(tgId), new InputFile(Buffer.from(content, 'utf8'), filename), caption ? { caption } : undefined)
+      return { ok: true }
+    } catch (e) {
+      if (e instanceof GrammyError) return { ok: false, blocked: e.error_code === 403, error: e.description }
       return { ok: false, error: (e as Error).message }
     }
   }

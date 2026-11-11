@@ -1,9 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
+import { BotService } from '../bot/bot.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { ReminderPlanner } from '../reminders/reminder-planner.service'
 import type { OnboardingDto } from './dto/onboarding.dto'
 import type { UpdateMasterDto } from './dto/update-master.dto'
+import { dateTime, rubles, toCsv } from './export-csv'
 import { InstagramError, normalizeInstagram } from './instagram'
 
 const MASTER_SELECT = {
@@ -101,12 +103,77 @@ export class MastersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reminders: ReminderPlanner,
+    private readonly bot: BotService,
   ) {}
 
   async get(masterId: string): Promise<MasterView> {
     const row = await this.prisma.master.findUnique({ where: { id: masterId }, select: MASTER_SELECT })
     if (!row) throw new NotFoundException('Кабинет не найден')
     return toView(row)
+  }
+
+  /**
+   * Все клиентки и записи мастера — двумя CSV в его чат с ботом.
+   * Это страховка от страха «всё пропадёт»: копия лежит у мастера на руках.
+   */
+  async exportToChat(masterId: string): Promise<{ sent: true; clients: number; appointments: number }> {
+    const master = await this.prisma.master.findUnique({
+      where: { id: masterId },
+      select: { user: { select: { tgId: true, timezone: true } } },
+    })
+    if (!master) throw new NotFoundException('Кабинет не найден')
+    const { tgId, timezone } = master.user
+
+    const [clients, appointments] = await Promise.all([
+      this.prisma.client.findMany({
+        where: { masterId },
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, shape: true, likes: true, allergy: true, payment: true, note: true, repeatWeeks: true, createdAt: true },
+      }),
+      this.prisma.appointment.findMany({
+        where: { masterId },
+        orderBy: { startsAt: 'asc' },
+        select: { clientId: true, startsAt: true, duration: true, services: true, price: true, paid: true, note: true, status: true, client: { select: { name: true } } },
+      }),
+    ])
+
+    const visits = new Map<string, { count: number; last: Date }>()
+    for (const a of appointments) {
+      if (a.status !== 'DONE' && a.status !== 'ARRIVED') continue
+      const v = visits.get(a.clientId)
+      visits.set(a.clientId, { count: (v?.count ?? 0) + 1, last: !v || a.startsAt > v.last ? a.startsAt : v.last })
+    }
+
+    const clientsCsv = toCsv(
+      ['Имя', 'Форма', 'Что любит', 'Аллергия', 'Оплата', 'Заметка', 'Ходит раз в (недель)', 'Визитов', 'Последний визит', 'Добавлена'],
+      clients.map((c) => {
+        const v = visits.get(c.id)
+        return [c.name, c.shape, c.likes, c.allergy, c.payment, c.note, c.repeatWeeks, v?.count ?? 0, v ? dateTime(v.last, timezone).date : '', dateTime(c.createdAt, timezone).date]
+      }),
+    )
+
+    const STATUS: Record<string, string> = { PLANNED: 'Запланирована', ARRIVED: 'Пришла', DONE: 'Проведена', CANCELLED: 'Отменена' }
+    const appointmentsCsv = toCsv(
+      ['Дата', 'Время', 'Клиентка', 'Услуги', 'Минут', 'Цена, ₽', 'Оплачено, ₽', 'Долг, ₽', 'Статус', 'Заметка'],
+      appointments.map((a) => {
+        const when = dateTime(a.startsAt, timezone)
+        const names = Array.isArray(a.services) ? (a.services as { name?: string }[]).map((x) => x.name).filter(Boolean).join(' + ') : ''
+        const debt = a.status === 'CANCELLED' ? 0 : Math.max(a.price - a.paid, 0)
+        return [when.date, when.time, a.client.name, names, a.duration, rubles(a.price), rubles(a.paid), rubles(debt), STATUS[a.status] ?? a.status, a.note]
+      }),
+    )
+
+    const day = dateTime(new Date(), timezone).date.replace(/\./g, '-')
+    const first = await this.bot.sendDocument(tgId, `клиентки_${day}.csv`, clientsCsv, 'Ваши клиентки. Откройте в Excel или Google Таблицах')
+    const second = first.ok ? await this.bot.sendDocument(tgId, `записи_${day}.csv`, appointmentsCsv, 'Все ваши записи') : first
+    if (!second.ok) {
+      throw new BadRequestException(
+        first.blocked || second.blocked
+          ? 'Бот не может написать вам: откройте чат с ботом и нажмите «Начать»'
+          : 'Не удалось отправить файлы в Telegram. Попробуйте ещё раз',
+      )
+    }
+    return { sent: true, clients: clients.length, appointments: appointments.length }
   }
 
   async update(masterId: string, dto: UpdateMasterDto): Promise<MasterView> {

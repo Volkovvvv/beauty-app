@@ -18,13 +18,15 @@ interface ProfilePageProps {
   onSave: (patch: { displayName: string; address: string; instagram: string; specialties: string[]; workDays: number[]; timezone?: string }) => Promise<void>
   onOpenServices: () => void
   onOpenBooking: () => void
+  /** Бот присылает клиенток и записи файлами в чат */
+  onExport: () => Promise<void>
   onBack: () => void
 }
 
 const same = <T,>(a: readonly T[], b: readonly T[]) => a.length === b.length && a.every((x, i) => x === b[i])
 
 // Профиль мастера: имя, адрес и Instagram для клиенток, сферы, рабочие дни и услуги
-export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSave, onOpenServices, onOpenBooking, onBack }: ProfilePageProps) {
+export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSave, onOpenServices, onOpenBooking, onExport, onBack }: ProfilePageProps) {
   const { master } = useMaster()
   const [name, setName] = useState(master.name)
   const [address, setAddress] = useState(master.address ?? '')
@@ -35,6 +37,7 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
   const device = deviceTimeZone()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   const handle = instagramHandle(instagram)
   const changed =
@@ -56,6 +59,15 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
     onSave({ displayName: name.trim(), address: address.trim(), instagram: handle ?? '', specialties: picked, workDays: [...workDays], ...(timezone !== master.timezone ? { timezone } : {}) })
       .catch((e: Error) => setError(e.message))
       .finally(() => setSaving(false))
+  }
+
+  const exportData = () => {
+    if (exporting) return
+    setExporting(true)
+    setError('')
+    onExport()
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setExporting(false))
   }
 
   return (
@@ -147,6 +159,13 @@ export default function ProfilePage({ catalog, servicesCount, hiddenCount, onSav
             <span className={s.rowText}>
               <span className={s.rowTitle}>Онлайн-запись</span>
               <span className={s.sub}>Посмотреть, как её видят клиентки</span>
+            </span>
+            <span className={s.chevron} aria-hidden="true">›</span>
+          </button>
+          <button type="button" className={s.row} onClick={exportData} disabled={exporting}>
+            <span className={s.rowText}>
+              <span className={s.rowTitle}>{exporting ? 'Отправляем…' : 'Выгрузить мои данные'}</span>
+              <span className={s.sub}>Клиентки и записи файлами в Excel — бот пришлёт их в чат</span>
             </span>
             <span className={s.chevron} aria-hidden="true">›</span>
           </button>
